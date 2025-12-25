@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login & Registration</title>
+  <link rel="stylesheet" href="/login.css" />
+</head>
+
+<body>
+  <!-- REGISTER -->
+  <div class="container">
+    <h2>New User Registration</h2>
+    <p id="regMsg" class="error"></p>
+
+    <div class="input-group">
+      <input id="regUser" placeholder="Email" />
+    </div>
+
+    <div class="input-group">
+      <input id="regPass" type="password" placeholder="Password" />
+      <span class="toggle-password" data-target="regPass">Show</span>
+    </div>
+
+    <div class="strength-wrapper">
+      <div id="regBar" class="strength-bar"></div>
+    </div>
+    <div id="regText" class="strength-text"></div>
+
+    <button id="regBtn">Register</button>
+  </div>
+
+  <!-- LOGIN -->
+  <div class="container">
+    <h2>Existing User Login</h2>
+    <p id="loginMsg" class="error"></p>
+
+    <div class="input-group">
+      <input id="loginUser" placeholder="Email" />
+    </div>
+
+    <div class="input-group">
+      <input id="loginPass" type="password" placeholder="Password" />
+      <span class="toggle-password" data-target="loginPass">Show</span>
+    </div>
+
+    <div class="remember">
+      <label>
+        <input type="checkbox" id="rememberMe" checked disabled />
+        Remember Me
+      </label>
+    </div>
+
+    <button id="loginBtn">Log In</button>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    Need help? <a href="/contactus.html">Contact us here</a>
+  </div>
+
+  <!-- Supabase client -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/login.js" defer></script>
+</body>
+</html>
