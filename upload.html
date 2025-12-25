@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Upload</title>
+  <link rel="stylesheet" href="upload.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+
+<body>
+  <div id="pageContainer">
+    <h2>Upload Your Documents</h2>
+
+    <div class="wizardText">
+      <div class="emphasis">Step 1: Choose Language</div>
+      <label><input type="radio" name="lang" value="english" checked> English</label>
+      <label><input type="radio" name="lang" value="hebrew"> Hebrew</label>
+    </div>
+
+    <div class="wizardText">
+      <div class="emphasis">Step 2: Upload Files</div>
+      <div id="dropZone" tabindex="0">Click or drag files here</div>
+      <input type="file" id="fileInput" multiple style="display:none" />
+    </div>
+
+    <div id="previewContainer"></div>
+
+    <div id="uploadProgressContainer">
+      <div id="uploadProgressBar"></div>
+    </div>
+
+    <div id="progressMessage"></div>
+
+    <button id="proceedBtn" style="display:none;">Proceed</button>
+
+    <div class="wizardText">
+      <div class="tip">Make sure all captions are filled in the selected language.</div>
+    </div>
+
+    <footer style="margin-top:40px; text-align:center;">
+      <a href="contactus.html">Need help? Contact us here</a>
+    </footer>
+  </div>
+
+  <script src="upload.js"></script>
+</body>
+</html>
