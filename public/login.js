@@ -1,3 +1,6 @@
+document.body.insertAdjacentHTML("afterbegin",
+  "<div style='color:blue;font-weight:bold;'>JS STARTED</div>"
+);
 console.log("LOGIN JS LOADED");
 alert("LOGIN JS LOADED");
 
@@ -5,6 +8,9 @@ alert("LOGIN JS LOADED");
 const SUPABASE_URL = "https://fohzmnvqgtbwglapojuo.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_ooSqDRIkzjzbm_4lIyYmuQ_ylutHG77";
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+document.body.insertAdjacentHTML("afterbegin",
+  "<div style='color:green;font-weight:bold;'>SUPABASE OK</div>"
+);
 
 // Elements
 const regUser = document.getElementById("regUser");
