@@ -8,7 +8,6 @@
 </head>
 <body>
 
-  <!-- REGISTER -->
   <div class="container">
     <h2>New User Registration</h2>
     <p id="regMsg" class="error" aria-live="polite"></p>
@@ -19,18 +18,17 @@
 
     <div class="input-group">
       <input id="regPass" type="password" placeholder="Password" autocomplete="new-password" />
-      <span class="toggle-password" data-target="regPass" aria-hidden="false">Show</span>
+      <span class="toggle-password" data-target="regPass">Show</span>
     </div>
 
     <div class="strength-wrapper">
       <div id="regBar" class="strength-bar"></div>
     </div>
-    <div id="regText" class="strength-text" aria-hidden="true"></div>
+    <div id="regText" class="strength-text"></div>
 
     <button id="regBtn" type="button">Register</button>
   </div>
 
-  <!-- LOGIN -->
   <div class="container">
     <h2>Existing User Login</h2>
     <p id="loginMsg" class="error" aria-live="polite"></p>
@@ -41,7 +39,7 @@
 
     <div class="input-group">
       <input id="loginPass" type="password" placeholder="Password" autocomplete="current-password" />
-      <span class="toggle-password" data-target="loginPass" aria-hidden="false">Show</span>
+      <span class="toggle-password" data-target="loginPass">Show</span>
     </div>
 
     <div class="remember">
@@ -54,12 +52,10 @@
     <button id="loginBtn" type="button">Log In</button>
   </div>
 
-  <!-- FOOTER -->
   <div class="footer">
     Need help? <a href="contactus.html">Contact us here</a>
   </div>
 
-  <!-- Supabase client must load before login.js -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
   <script src="login.js" defer></script>
 </body>
