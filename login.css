@@ -1,4 +1,3 @@
-/* Visual layout preserved from your provided styles */
 body {
   font-family: Arial, sans-serif;
   background: #f4f4f4;
@@ -33,7 +32,7 @@ h2 { text-align: center; margin-bottom: 10px; }
   width: 100%;
   max-width: 320px;
   height: 46px;
-  padding: 12px 60px 12px 12px; /* room for toggle */
+  padding: 12px 60px 12px 12px;
   border-radius: 6px;
   border: 1px solid #ccc;
   font-size: 16px;
@@ -50,8 +49,6 @@ h2 { text-align: center; margin-bottom: 10px; }
   color: #0070f3;
   user-select: none;
 }
-
-.toggle-password:active { opacity: 0.8; }
 
 .strength-wrapper {
   width: 100%;
@@ -90,8 +87,6 @@ button {
   cursor: pointer;
 }
 
-button:active { transform: translateY(1px); }
-
 .error {
   color: #b00020;
   text-align: center;
@@ -107,3 +102,23 @@ button:active { transform: translateY(1px); }
   margin-top: 10px;
   color: #666;
 }
+
+/* Diagnostic panel styles (keeps visible on mobile) */
+#diag-panel {
+  position: fixed;
+  right: 10px;
+  bottom: 10px;
+  width: 320px;
+  max-height: 45vh;
+  overflow-y: auto;
+  z-index: 999999;
+  background: rgba(0,0,0,0.82);
+  color: #fff;
+  font-size: 12px;
+  padding: 10px;
+  border-radius: 8px;
+  box-sizing: border-box;
+  font-family: system-ui, Arial, sans-serif;
+}
+#diag-panel button { margin-top:8px; padding:6px 8px; border-radius:6px; border:none; background:#0070f3; color:#fff; cursor:pointer; }
+#diag-panel .diag-line { margin-bottom:6px; line-height:1.2; }
