@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login</title>
+  <link rel="stylesheet" href="login.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+</head>
+<body>
+
+  <div class="container">
+    <h2>Login</h2>
+    <p id="loginMsg" class="error"></p>
+
+    <div class="input-group">
+      <input id="loginUser" placeholder="Email" />
+    </div>
+
+    <div class="input-group">
+      <input id="loginPass" type="password" placeholder="Password" />
+      <span class="toggle-password" data-target="loginPass">Show</span>
+    </div>
+
+    <button id="loginBtn" type="button">Log In</button>
+  </div>
+
+  <script src="login.js"></script>
+</body>
+</html>
+
