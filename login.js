@@ -1,16 +1,13 @@
-// Minimal robust login.js — event-delegation for Show/Hide, Supabase auth, Remember Me
-
+// Robust login.js for Vercel + Supabase
 const SUPABASE_URL = "https://fohzmnvqgtbwglapojuo.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_ooSqDRIkzjzbm_4lIyYmuQ_ylutHG77";
 
-// Safe supabase init
 let supabaseClient = null;
 try {
   if (typeof supabase !== 'undefined' && supabase && typeof supabase.createClient === 'function') {
     supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   }
 } catch (e) {
-  console.warn('Supabase init error', e);
   supabaseClient = null;
 }
 
@@ -21,7 +18,7 @@ const saveRemember = email => { try { localStorage.setItem(REMEMBER_KEY, email |
 const loadRemember = () => { try { return localStorage.getItem(REMEMBER_KEY) || ''; } catch (e) { return ''; } };
 const clearRemember = () => { try { localStorage.removeItem(REMEMBER_KEY); } catch (e) {} };
 
-// Event-delegation toggle so it always works
+// Event delegation for Show/Hide toggle (guaranteed to work)
 function enableToggleDelegation() {
   document.addEventListener('click', function (ev) {
     const el = ev.target;
@@ -74,11 +71,9 @@ function attachAuthHandlers() {
   const loginMsg = $id("loginMsg");
   const rememberMe = $id("rememberMe");
 
-  // populate remembered email
   const remembered = loadRemember();
   if (remembered && loginUser) { loginUser.value = remembered; if (rememberMe) rememberMe.checked = true; }
 
-  // strength bar
   if (regPass && regBar && regText) {
     regPass.addEventListener('input', e => {
       const s = score(e.target.value);
@@ -103,14 +98,12 @@ function attachAuthHandlers() {
       const { error } = await supabaseClient.auth.signUp({ email, password });
       if (error) { if (regMsg) regMsg.textContent = error.message || "Registration failed."; return; }
 
-      // auto-login
       const { error: loginError } = await supabaseClient.auth.signInWithPassword({ email, password });
       if (loginError) { if (regMsg) regMsg.textContent = "Registered, but login failed. Try logging in."; return; }
 
       if (rememberMe && rememberMe.checked) saveRemember(email);
       window.location.href = "upload.html";
     } catch (err) {
-      console.error('Register error', err);
       if (regMsg) regMsg.textContent = "Registration error. Check console.";
     }
   }
@@ -134,7 +127,6 @@ function attachAuthHandlers() {
 
       window.location.href = "upload.html";
     } catch (err) {
-      console.error('Login error', err);
       if (loginMsg) loginMsg.textContent = "Login error. Check console.";
     }
   }
@@ -151,7 +143,7 @@ async function autoRedirectIfLoggedIn() {
   try {
     const { data } = await supabaseClient.auth.getSession();
     if (data && data.session) window.location.href = "upload.html";
-  } catch (e) { console.warn('autoRedirect error', e); }
+  } catch (e) {}
 }
 
 // Initialize
