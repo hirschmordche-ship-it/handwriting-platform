@@ -1,229 +1,298 @@
-// Diagnostic login.js — comprehensive stage-by-stage logging + on-page console
-// Overwrite your existing login.js with this file. It will:
-//  - Create an on-page diagnostic panel (visible on mobile).
-//  - Log each stage to console and the panel with clear labels.
-//  - Test Supabase availability and safe initialization.
-//  - Verify presence of key elements and data-target/id matches.
-//  - Attach non-invasive test listeners for toggle, strength bar, and auth buttons.
-//  - Run small runtime tests (simulate toggle click, simulate input) to show whether handlers respond.
-//  - Never removes or replaces your existing handlers; only adds safe listeners and diagnostics.
+// Complete robust login.js
+// - Safe Supabase init (non-blocking)
+// - Guaranteed Show/Hide toggle via delegation
+// - Password strength bar attached reliably
+// - Supabase auth if available, else local-storage fallback
+// - Visible on-page diagnostic console with stage-by-stage messages
 
-// ----------------------------- Diagnostic UI -----------------------------
-(function createDiagPanel() {
-  if (document.getElementById('__diag_panel')) return;
+// -------------------- Diagnostic panel (on-page) --------------------
+(function createDiagPanel(){
+  if (document.getElementById('diag-panel')) return;
   const panel = document.createElement('div');
-  panel.id = '__diag_panel';
-  panel.style.position = 'fixed';
-  panel.style.right = '12px';
-  panel.style.bottom = '12px';
-  panel.style.width = '320px';
-  panel.style.maxHeight = '45vh';
-  panel.style.overflowY = 'auto';
-  panel.style.zIndex = 999999;
-  panel.style.background = 'rgba(0,0,0,0.85)';
-  panel.style.color = '#fff';
-  panel.style.fontSize = '12px';
-  panel.style.lineHeight = '1.3';
-  panel.style.padding = '10px';
-  panel.style.borderRadius = '8px';
-  panel.style.boxShadow = '0 6px 18px rgba(0,0,0,0.4)';
-  panel.style.fontFamily = 'system-ui, Arial, sans-serif';
-  panel.style.backdropFilter = 'blur(4px)';
-  panel.innerHTML = '<strong style="display:block;margin-bottom:6px">Diagnostics</strong><div id="__diag_log"></div><button id="__diag_clear" style="margin-top:8px;padding:6px 8px;border-radius:6px;border:none;background:#0070f3;color:#fff;cursor:pointer">Clear</button>';
+  panel.id = 'diag-panel';
+  panel.innerHTML = '<strong style="display:block;margin-bottom:6px">Diagnostics</strong><div id="diag-log"></div><button id="diag-clear">Clear</button>';
   document.documentElement.appendChild(panel);
-  document.getElementById('__diag_clear').addEventListener('click', () => {
-    document.getElementById('__diag_log').innerHTML = '';
-  });
+  document.getElementById('diag-clear').addEventListener('click', ()=>{ document.getElementById('diag-log').innerHTML=''; });
 })();
 
-// Logging helper (console + on-page)
-function diagLog(msg, level = 'info') {
+function diag(msg, level='info'){
   try {
-    const el = document.getElementById('__diag_log');
+    const log = document.getElementById('diag-log');
     const time = new Date().toLocaleTimeString();
-    const color = level === 'error' ? '#ff6b6b' : level === 'warn' ? '#ffd166' : '#9ae6b4';
     const line = document.createElement('div');
-    line.style.marginBottom = '6px';
-    line.innerHTML = `<span style="color:${color};font-weight:600">[${time}]</span> <span style="opacity:0.95">${escapeHtml(msg)}</span>`;
-    el.appendChild(line);
-    // keep newest visible
-    el.scrollTop = el.scrollHeight;
-  } catch (e) { /* ignore UI errors */ }
-
+    line.className = 'diag-line';
+    const color = level === 'error' ? '#ff6b6b' : level === 'warn' ? '#ffd166' : '#9ae6b4';
+    line.innerHTML = `<span style="color:${color};font-weight:600">[${time}]</span> <span style="opacity:0.95">${String(msg)}</span>`;
+    log.appendChild(line);
+    log.scrollTop = log.scrollHeight;
+  } catch (e) {}
   if (level === 'error') console.error('[DIAG]', msg);
   else if (level === 'warn') console.warn('[DIAG]', msg);
   else console.log('[DIAG]', msg);
 }
 
-function escapeHtml(s) {
-  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+diag('Diagnostic loader injected', 'info');
+
+// -------------------- Safe Supabase init --------------------
+let supabaseClient = null;
+try {
+  const supExists = typeof supabase !== 'undefined';
+  diag(`Supabase global defined: ${supExists}`, supExists ? 'info' : 'warn');
+  if (supExists && supabase && typeof supabase.createClient === 'function') {
+    try {
+      supabaseClient = supabase.createClient("https://fohzmnvqgtbwglapojuo.supabase.co", "sb_publishable_ooSqDRIkzjzbm_4lIyYmuQ_ylutHG77");
+      diag('Supabase client created successfully', 'info');
+    } catch (e) {
+      diag('Supabase.createClient threw: ' + (e && e.message ? e.message : e), 'error');
+      supabaseClient = null;
+    }
+  } else {
+    diag('Supabase.createClient not available (library missing or different)', 'warn');
+  }
+} catch (e) {
+  diag('Error checking Supabase: ' + e.message, 'error');
+  supabaseClient = null;
 }
 
-// ----------------------------- Stage runner -----------------------------
-diagLog('Diagnostic script loaded', 'info');
+// -------------------- Utilities --------------------
+const $id = id => document.getElementById(id);
+const onReady = fn => { if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', fn); else fn(); };
 
-function runDiagnostics() {
-  diagLog('Starting diagnostics...', 'info');
-
-  // Stage 1: DOM readiness
-  diagLog(`Document readyState: ${document.readyState}`, 'info');
-
-  // Stage 2: Supabase presence and safe init
-  try {
-    const supExists = typeof supabase !== 'undefined';
-    diagLog(`Supabase global defined: ${supExists}`, supExists ? 'info' : 'warn');
-
-    let supClient = null;
-    if (supExists && supabase && typeof supabase.createClient === 'function') {
-      try {
-        supClient = supabase.createClient("https://fohzmnvqgtbwglapojuo.supabase.co", "sb_publishable_ooSqDRIkzjzbm_4lIyYmuQ_ylutHG77");
-        diagLog('Supabase.createClient() succeeded (client created)', 'info');
-      } catch (e) {
-        diagLog('Supabase.createClient() threw an error: ' + e.message, 'error');
-      }
-    } else {
-      diagLog('Supabase.createClient not available (library missing or different version)', 'warn');
+// -------------------- Toggle delegation --------------------
+function installToggleDelegation(){
+  if (document.__toggleInstalled) { diag('Toggle delegation already installed', 'info'); return; }
+  document.__toggleInstalled = true;
+  document.addEventListener('click', function(ev){
+    const el = ev.target;
+    if (!el || !el.classList) return;
+    if (!el.classList.contains('toggle-password')) return;
+    const targetId = el.dataset && el.dataset.target;
+    if (!targetId) {
+      diag('toggle-password clicked but no data-target attribute found', 'warn');
+      return;
     }
-  } catch (e) {
-    diagLog('Error while checking Supabase: ' + e.message, 'error');
-  }
-
-  // Stage 3: Element presence checks
-  const idsToCheck = ['regUser','regPass','regBar','regText','regBtn','loginUser','loginPass','loginBtn','rememberMe'];
-  const found = {};
-  idsToCheck.forEach(id => {
-    const el = document.getElementById(id);
-    found[id] = !!el;
-    diagLog(`Element #${id} present: ${!!el}`, el ? 'info' : 'warn');
-  });
-
-  // Stage 4: Toggle elements and data-target checks
-  const toggles = Array.from(document.querySelectorAll('.toggle-password'));
-  diagLog(`Found ${toggles.length} .toggle-password elements`, toggles.length ? 'info' : 'warn');
-
-  toggles.forEach((t, i) => {
-    const dt = t.dataset && t.dataset.target;
-    const exists = dt && !!document.getElementById(dt);
-    diagLog(`Toggle[${i}] data-target="${dt}" -> target exists: ${exists}`, exists ? 'info' : 'error');
-  });
-
-  // Stage 5: Attach non-invasive test listeners (capture phase) to log actual user interactions
-  try {
-    // Toggle click listener (capture) — logs when user clicks a toggle
-    function toggleCapture(ev) {
-      const el = ev.target;
-      if (!el || !el.classList) return;
-      if (!el.classList.contains('toggle-password')) return;
-      diagLog('User clicked a .toggle-password element (capture)', 'info');
+    const input = $id(targetId);
+    if (!input) { diag(`toggle target not found for data-target="${targetId}"`, 'error'); return; }
+    const was = input.type === 'password';
+    try {
+      input.type = was ? 'text' : 'password';
+      el.textContent = was ? 'Hide' : 'Show';
+      try { input.focus({preventScroll:true}); } catch(e){ input.focus(); }
+      diag(`Toggled input #${targetId} to type="${input.type}"`, 'info');
+    } catch (e) {
+      diag('Error toggling input: ' + (e && e.message ? e.message : e), 'error');
     }
-    document.addEventListener('click', toggleCapture, true);
+  }, { passive: true });
+  diag('Toggle delegation installed', 'info');
+}
 
-    // Buttons: capture clicks
-    ['regBtn','loginBtn'].forEach(id => {
-      const b = document.getElementById(id);
-      if (b) {
-        b.addEventListener('click', function () {
-          diagLog(`#${id} clicked`, 'info');
-        }, true);
-      }
+// -------------------- Strength handler --------------------
+function attachStrengthHandler(){
+  try {
+    const regPass = $id('regPass');
+    const regBar = $id('regBar');
+    const regText = $id('regText');
+    if (!regPass || !regBar || !regText) {
+      diag('Strength handler skipped: regPass/regBar/regText not all present', 'warn');
+      return;
+    }
+    if (regPass.__strengthAttached) { diag('Strength handler already attached', 'info'); return; }
+    regPass.__strengthAttached = true;
+    function score(p){
+      let s=0; if(!p) return 0; if(p.length>=6) s++; if((p.match(/\d/g)||[]).length>=2) s++; if(/[!@#$%^&*()_\-+=
+
+\[\]
+
+{}|\\:;"\'<>,.?/]/.test(p)) s++; return s;
+    }
+    regPass.addEventListener('input', function(e){
+      const s = score(e.target.value);
+      const widths = ["5%","33%","66%","100%"];
+      const colors = ["#eee","#ffe066","#ffd166","#2d6a4f"];
+      regBar.style.width = widths[s] || widths[0];
+      regBar.style.background = colors[s] || colors[0];
+      regText.textContent = ["","Weak","Medium","Strong"][s] || "";
+      diag(`Strength handler updated: score=${s}`, 'info');
     });
+    const initScore = score(regPass.value || '');
+    regBar.style.width = ["5%","33%","66%","100%"][initScore] || "5%";
+    regBar.style.background = ["#eee","#ffe066","#ffd166","#2d6a4f"][initScore] || "#eee";
+    regText.textContent = ["","Weak","Medium","Strong"][initScore] || "";
+    diag('Strength handler attached and initialized', 'info');
+  } catch (e) {
+    diag('attachStrengthHandler error: ' + (e && e.message ? e.message : e), 'error');
+  }
+}
 
-    // Strength bar: attach a non-invasive input listener to regPass to log input events
-    const regPass = document.getElementById('regPass');
-    if (regPass) {
-      regPass.addEventListener('input', function (e) {
-        diagLog(`regPass input event fired (length=${(e.target.value||'').length})`, 'info');
-      }, true);
-    } else {
-      diagLog('regPass element missing; cannot attach strength input listener', 'warn');
+// -------------------- Auth handlers (Supabase or local fallback) --------------------
+function attachAuthHandlers(){
+  try {
+    const regBtn = $id('regBtn'), loginBtn = $id('loginBtn');
+    const regUser = $id('regUser'), regPass = $id('regPass');
+    const loginUser = $id('loginUser'), loginPass = $id('loginPass');
+    const regMsg = $id('regMsg'), loginMsg = $id('loginMsg');
+    const rememberMe = $id('rememberMe');
+
+    const REMEMBER_KEY = 'remember_email_v1';
+    const saveRemember = email => { try { localStorage.setItem(REMEMBER_KEY, email || ''); } catch(e){} };
+    const loadRemember = () => { try { return localStorage.getItem(REMEMBER_KEY) || ''; } catch(e){ return ''; } };
+    const clearRemember = () => { try { localStorage.removeItem(REMEMBER_KEY); } catch(e){} };
+
+    try {
+      const remembered = loadRemember();
+      if (remembered && loginUser) { loginUser.value = remembered; if (rememberMe) rememberMe.checked = true; diag('Prefilled remembered email', 'info'); }
+    } catch(e){}
+
+    async function localRegister(){
+      if (regMsg) regMsg.textContent = '';
+      if (loginMsg) loginMsg.textContent = '';
+      const email = regUser ? (regUser.value||'').trim() : '';
+      const password = regPass ? regPass.value : '';
+      if (!email) { if (regMsg) regMsg.textContent = 'Please enter an email.'; diag('Local register failed: no email', 'warn'); return; }
+      const s = (function scoreLocal(p){ let ss=0; if(!p) return 0; if(p.length>=6) ss++; if((p.match(/\d/g)||[]).length>=2) ss++; if(/[!@#$%^&*()_\-+=
+
+\[\]
+
+{}|\\:;"\'<>,.?/]/.test(p)) ss++; return ss; })(password);
+      if (s !== 3) { if (regMsg) regMsg.textContent = 'Weak password.'; diag('Local register failed: weak password', 'warn'); return; }
+      const users = JSON.parse(localStorage.getItem('users')||'{}');
+      if (users[email]) { if (regMsg) regMsg.textContent = 'Email exists'; diag('Local register failed: email exists', 'warn'); return; }
+      const h = await (async p => { const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(p)); return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join(''); })(password);
+      users[email] = h;
+      localStorage.setItem('users', JSON.stringify(users));
+      diag('Local register succeeded (stored hashed password)', 'info');
+      if (loginUser) loginUser.value = email;
+      if (loginPass) loginPass.value = password;
+      await localLogin();
+    }
+
+    async function localLogin(){
+      if (regMsg) regMsg.textContent = '';
+      if (loginMsg) loginMsg.textContent = '';
+      const email = loginUser ? (loginUser.value||'').trim() : '';
+      const password = loginPass ? loginPass.value : '';
+      if (!email || !password) { if (loginMsg) loginMsg.textContent = 'Enter email and password'; diag('Local login failed: missing fields', 'warn'); return; }
+      const users = JSON.parse(localStorage.getItem('users')||'{}');
+      const h = await (async p => { const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(p)); return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join(''); })(password);
+      if (users[email] !== h) { if (loginMsg) loginMsg.textContent = 'Invalid credentials'; diag('Local login failed: invalid credentials', 'warn'); return; }
+      localStorage.setItem('activeUser', email);
+      if (rememberMe && rememberMe.checked) saveRemember(email); else clearRemember();
+      diag('Local login succeeded; redirect would occur now', 'info');
+      // Uncomment to enable redirect:
+      // location.href = '/upload.html';
+    }
+
+    async function supabaseRegister(){
+      if (!supabaseClient) { diag('Supabase register skipped: client not available', 'warn'); return localRegister(); }
+      if (regMsg) regMsg.textContent = '';
+      const email = regUser ? (regUser.value||'').trim() : '';
+      const password = regPass ? regPass.value : '';
+      if (!email) { if (regMsg) regMsg.textContent = 'Please enter an email.'; diag('Supabase register failed: no email', 'warn'); return; }
+      const s = (function scoreLocal(p){ let ss=0; if(!p) return 0; if(p.length>=6) ss++; if((p.match(/\d/g)||[]).length>=2) ss++; if(/[!@#$%^&*()_\-+=
+
+\[\]
+
+{}|\\:;"\'<>,.?/]/.test(p)) ss++; return ss; })(password);
+      if (s !== 3) { if (regMsg) regMsg.textContent = 'Weak password.'; diag('Supabase register failed: weak password', 'warn'); return; }
+      try {
+        const { error } = await supabaseClient.auth.signUp({ email, password });
+        if (error) { if (regMsg) regMsg.textContent = error.message || 'Registration failed'; diag('Supabase signUp error: ' + (error.message||error), 'error'); return; }
+        diag('Supabase signUp succeeded', 'info');
+        const { error: loginError } = await supabaseClient.auth.signInWithPassword({ email, password });
+        if (loginError) { if (regMsg) regMsg.textContent = 'Registered but login failed'; diag('Supabase signIn error: ' + (loginError.message||loginError), 'error'); return; }
+        diag('Supabase auto-login succeeded', 'info');
+        if (rememberMe && rememberMe.checked) saveRemember(email);
+        // location.href = '/upload.html';
+      } catch (e) {
+        diag('Supabase register exception: ' + (e && e.message ? e.message : e), 'error');
+      }
+    }
+
+    async function supabaseLogin(){
+      if (!supabaseClient) { diag('Supabase login skipped: client not available', 'warn'); return localLogin(); }
+      if (loginMsg) loginMsg.textContent = '';
+      const email = loginUser ? (loginUser.value||'').trim() : '';
+      const password = loginPass ? loginPass.value : '';
+      if (!email || !password) { if (loginMsg) loginMsg.textContent = 'Enter email and password'; diag('Supabase login failed: missing fields', 'warn'); return; }
+      try {
+        const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+        if (error) { if (loginMsg) loginMsg.textContent = error.message || 'Invalid credentials'; diag('Supabase signIn error: ' + (error.message||error), 'error'); return; }
+        diag('Supabase login succeeded', 'info');
+        if (rememberMe && rememberMe.checked) saveRemember(email); else clearRemember();
+        // location.href = '/upload.html';
+      } catch (e) {
+        diag('Supabase login exception: ' + (e && e.message ? e.message : e), 'error');
+      }
+    }
+
+    if (regBtn && !regBtn.__attached) {
+      regBtn.addEventListener('click', function(){ if (supabaseClient) supabaseRegister(); else localRegister(); });
+      regBtn.__attached = true;
+      diag('Register button handler attached', 'info');
+    }
+    if (loginBtn && !loginBtn.__attached) {
+      loginBtn.addEventListener('click', function(){ if (supabaseClient) supabaseLogin(); else localLogin(); });
+      loginBtn.__attached = true;
+      diag('Login button handler attached', 'info');
     }
   } catch (e) {
-    diagLog('Error attaching capture listeners: ' + e.message, 'error');
+    diag('attachAuthHandlers error: ' + (e && e.message ? e.message : e), 'error');
   }
+}
 
-  // Stage 6: Runtime tests (simulate small actions to see if handlers respond)
-  // 6a: Simulate toggle click on first toggle (non-destructive)
+// -------------------- Quick simulation checks --------------------
+function runSimulations(){
   try {
+    const toggles = Array.from(document.querySelectorAll('.toggle-password'));
+    diag(`Found ${toggles.length} toggle elements`, toggles.length ? 'info' : 'warn');
     if (toggles.length > 0) {
       const t = toggles[0];
       const dt = t.dataset && t.dataset.target;
-      const input = dt ? document.getElementById(dt) : null;
-      if (!input) {
-        diagLog('Cannot run toggle simulation: target input not found for first toggle', 'error');
-      } else {
-        // Save original type
-        const origType = input.type;
-        // Dispatch a click event on the toggle element
-        const ev = new MouseEvent('click', { bubbles: true, cancelable: true });
-        t.dispatchEvent(ev);
-        // Check whether input type changed
-        setTimeout(() => {
-          const newType = input.type;
-          const changed = newType !== origType;
-          diagLog(`Toggle simulation: input type changed from "${origType}" to "${newType}" -> ${changed}`, changed ? 'info' : 'error');
-          // If changed, revert to original to avoid altering UI state
-          try { input.type = origType; } catch (e) {}
-        }, 50);
+      const input = dt ? $id(dt) : null;
+      if (!input) diag('Simulation: toggle target not found for first toggle', 'error');
+      else {
+        const orig = input.type;
+        t.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+        setTimeout(()=> {
+          const now = input.type;
+          diag(`Simulation: input type changed from "${orig}" to "${now}" -> ${now !== orig}`, now !== orig ? 'info' : 'error');
+          try { input.type = orig; } catch(e){}
+        }, 60);
       }
-    } else {
-      diagLog('No toggle elements to simulate', 'warn');
     }
+    const regPass = $id('regPass'), regBar = $id('regBar'), regText = $id('regText');
+    if (regPass && regBar && regText) {
+      const prev = regPass.value || '';
+      regPass.value = 'Abc123!@';
+      regPass.dispatchEvent(new Event('input', { bubbles: true }));
+      setTimeout(()=> {
+        const width = regBar.style.width || '(no inline width)';
+        const text = regText.textContent || '(no text)';
+        diag(`Simulation: regBar width="${width}", regText="${text}"`, (width && text && text !== '(no text)') ? 'info' : 'error');
+        regPass.value = prev;
+        regPass.dispatchEvent(new Event('input', { bubbles: true }));
+      }, 80);
+    } else diag('Simulation: strength elements missing', 'warn');
   } catch (e) {
-    diagLog('Toggle simulation error: ' + e.message, 'error');
+    diag('runSimulations error: ' + (e && e.message ? e.message : e), 'error');
   }
-
-  // 6b: Simulate strength input event
-  try {
-    const regPassEl = document.getElementById('regPass');
-    const regBarEl = document.getElementById('regBar');
-    const regTextEl = document.getElementById('regText');
-    if (regPassEl && regBarEl && regTextEl) {
-      const prevVal = regPassEl.value || '';
-      // set a test value that should produce a strong score
-      regPassEl.value = 'Abc123!@';
-      const ev = new Event('input', { bubbles: true, cancelable: true });
-      regPassEl.dispatchEvent(ev);
-      // wait a tick to let any handlers run
-      setTimeout(() => {
-        const width = regBarEl.style.width || '(no inline width)';
-        const text = regTextEl.textContent || '(no text)';
-        diagLog(`Strength simulation: regBar width="${width}", regText="${text}"`, (width && text) ? 'info' : 'error');
-        // restore previous value
-        regPassEl.value = prevVal;
-        regPassEl.dispatchEvent(new Event('input', { bubbles: true }));
-      }, 60);
-    } else {
-      diagLog('Strength simulation skipped: regPass/regBar/regText not all present', 'warn');
-    }
-  } catch (e) {
-    diagLog('Strength simulation error: ' + e.message, 'error');
-  }
-
-  // Stage 7: Check for JS runtime errors captured via window.onerror
-  (function installGlobalErrorHook() {
-    if (window.__diag_error_hook_installed) return;
-    window.__diag_error_hook_installed = true;
-    window.addEventListener('error', function (ev) {
-      diagLog('Global error captured: ' + (ev && ev.message ? ev.message : JSON.stringify(ev)), 'error');
-    });
-    window.addEventListener('unhandledrejection', function (ev) {
-      diagLog('Unhandled promise rejection: ' + (ev && ev.reason ? (ev.reason.message || JSON.stringify(ev.reason)) : JSON.stringify(ev)), 'error');
-    });
-    diagLog('Global error hooks installed', 'info');
-  })();
-
-  // Stage 8: Final summary and guidance
-  setTimeout(() => {
-    diagLog('Diagnostics complete. Look for the first "error" message above — that is where execution failed or a required element is missing.', 'info');
-    diagLog('If Supabase is missing or createClient is unavailable, your auth code may throw and stop other handlers from attaching.', 'warn');
-    diagLog('If a toggle data-target does not match an input id, the toggle cannot find its input (fix data-target to match id exactly).', 'warn');
-    diagLog('If you cannot access DevTools on mobile, use this panel to read the messages; copy them and share here if you want me to interpret.', 'info');
-  }, 200);
 }
 
-// Run diagnostics after DOM ready
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', runDiagnostics);
-} else {
-  runDiagnostics();
-}
+// -------------------- Global error hooks --------------------
+(function installGlobalHooks(){
+  if (window.__diag_error_hook_installed) return;
+  window.__diag_error_hook_installed = true;
+  window.addEventListener('error', function(ev){ diag('Global error: ' + (ev && ev.message ? ev.message : JSON.stringify(ev)), 'error'); });
+  window.addEventListener('unhandledrejection', function(ev){ diag('Unhandled rejection: ' + (ev && ev.reason ? (ev.reason.message||JSON.stringify(ev.reason)) : JSON.stringify(ev)), 'error'); });
+  diag('Global error hooks installed', 'info');
+})();
+
+// -------------------- Initialize --------------------
+onReady(function initAll(){
+  diag('DOM ready; initializing handlers', 'info');
+  installToggleDelegation();
+  attachStrengthHandler();
+  attachAuthHandlers();
+  setTimeout(runSimulations, 120);
+  diag('Initialization complete; check diagnostic panel for any "error" messages', 'info');
+});
