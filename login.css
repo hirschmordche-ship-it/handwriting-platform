@@ -1,3 +1,4 @@
+/* Visual layout preserved from your provided styles */
 body {
   font-family: Arial, sans-serif;
   background: #f4f4f4;
@@ -32,7 +33,7 @@ h2 { text-align: center; margin-bottom: 10px; }
   width: 100%;
   max-width: 320px;
   height: 46px;
-  padding: 12px 60px 12px 12px;
+  padding: 12px 60px 12px 12px; /* room for toggle */
   border-radius: 6px;
   border: 1px solid #ccc;
   font-size: 16px;
@@ -49,6 +50,8 @@ h2 { text-align: center; margin-bottom: 10px; }
   color: #0070f3;
   user-select: none;
 }
+
+.toggle-password:active { opacity: 0.8; }
 
 .strength-wrapper {
   width: 100%;
@@ -86,6 +89,8 @@ button {
   font-size: 16px;
   cursor: pointer;
 }
+
+button:active { transform: translateY(1px); }
 
 .error {
   color: #b00020;
