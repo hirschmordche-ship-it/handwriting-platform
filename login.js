@@ -1,93 +1,10 @@
-// --- Minimal, non-invasive patch ---
-// Paste this at the very top of login.js (before any other code).
-// It uses event-delegation so Show/Hide always works and attaches the strength bar handler after DOM ready.
-// It is idempotent and will not change your HTML or CSS.
+// Full working login.js — minimal, robust, and compatible with your existing HTML/CSS.
+// Overwrite your current login.js with this exact file.
 
-(function () {
-  if (window.__login_patch_installed) return;
-  window.__login_patch_installed = true;
-
-  const $id = id => document.getElementById(id);
-
-  // Event-delegation for Show/Hide (works even if other code errors or runs early)
-  function toggleHandler(ev) {
-    const el = ev.target;
-    if (!el || !el.classList) return;
-    if (!el.classList.contains('toggle-password')) return;
-    const targetId = el.dataset && el.dataset.target;
-    if (!targetId) return;
-    const input = $id(targetId);
-    if (!input) return;
-    const wasPassword = input.type === 'password';
-    input.type = wasPassword ? 'text' : 'password';
-    try { el.textContent = wasPassword ? 'Hide' : 'Show'; } catch (e) {}
-    try { input.focus({ preventScroll: true }); } catch (e) { input.focus(); }
-  }
-
-  // Strength bar updater (safe attach)
-  function attachStrength() {
-    const regPass = $id('regPass');
-    const regBar = $id('regBar');
-    const regText = $id('regText');
-    if (!regPass || !regBar || !regText) return;
-
-    function score(p) {
-      let s = 0;
-      if (!p) return 0;
-      if (p.length >= 6) s++;
-      if ((p.match(/[a-z]/gi) || []).length >= 2) s++;
-      if (/[!@#$%^&*()_\-+=
-
-\[\]
-
-{}|\\:;"'<>,.?/]/.test(p)) s++;
-      return s;
-    }
-
-    // avoid attaching twice
-    if (regPass.__strengthAttached) return;
-    regPass.__strengthAttached = true;
-
-    regPass.addEventListener('input', function (e) {
-      const s = score(e.target.value);
-      regBar.style.width = ["5%", "33%", "66%", "100%"][s] || "5%";
-      regBar.style.background = ["#eee", "#ffe066", "#ffd166", "#2d6a4f"][s] || "#eee";
-      regText.textContent = ["", "Weak", "Medium", "Strong"][s] || "";
-    });
-  }
-
-  // Ensure initial toggle labels reflect input type (Show)
-  function normalizeToggleLabels() {
-    document.querySelectorAll('.toggle-password').forEach(el => {
-      try { el.textContent = 'Show'; } catch (e) {}
-    });
-  }
-
-  function initPatch() {
-    normalizeToggleLabels();
-    attachStrength();
-    // attach delegation once
-    if (!document.__toggleDelegation) {
-      document.addEventListener('click', toggleHandler, { passive: true });
-      document.addEventListener('keydown', function (ev) {
-        if (ev.key !== 'Enter' && ev.key !== ' ') return;
-        const el = ev.target;
-        if (!el || !el.classList) return;
-        if (!el.classList.contains('toggle-password')) return;
-        ev.preventDefault();
-        el.click();
-      });
-      document.__toggleDelegation = true;
-    }
-  }
-
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initPatch);
-  else initPatch();
-})();
-// Robust login.js for Vercel + Supabase
 const SUPABASE_URL = "https://fohzmnvqgtbwglapojuo.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_ooSqDRIkzjzbm_4lIyYmuQ_ylutHG77";
 
+// Safe Supabase init (won't throw if CDN missing)
 let supabaseClient = null;
 try {
   if (typeof supabase !== 'undefined' && supabase && typeof supabase.createClient === 'function') {
@@ -95,6 +12,7 @@ try {
   }
 } catch (e) {
   supabaseClient = null;
+  console.warn('Supabase init failed', e);
 }
 
 // Helpers
@@ -104,8 +22,9 @@ const saveRemember = email => { try { localStorage.setItem(REMEMBER_KEY, email |
 const loadRemember = () => { try { return localStorage.getItem(REMEMBER_KEY) || ''; } catch (e) { return ''; } };
 const clearRemember = () => { try { localStorage.removeItem(REMEMBER_KEY); } catch (e) {} };
 
-// Event delegation for Show/Hide toggle (guaranteed to work)
+// Event-delegation for Show/Hide toggle (guaranteed to work)
 function enableToggleDelegation() {
+  // Click handler
   document.addEventListener('click', function (ev) {
     const el = ev.target;
     if (!el || !el.classList) return;
@@ -120,6 +39,7 @@ function enableToggleDelegation() {
     try { input.focus({ preventScroll: true }); } catch (e) { input.focus(); }
   }, { passive: true });
 
+  // Keyboard accessibility
   document.addEventListener('keydown', function (ev) {
     if (ev.key !== 'Enter' && ev.key !== ' ') return;
     const el = ev.target;
@@ -157,10 +77,13 @@ function attachAuthHandlers() {
   const loginMsg = $id("loginMsg");
   const rememberMe = $id("rememberMe");
 
+  // Populate remembered email if present
   const remembered = loadRemember();
   if (remembered && loginUser) { loginUser.value = remembered; if (rememberMe) rememberMe.checked = true; }
 
-  if (regPass && regBar && regText) {
+  // Strength bar attachment (idempotent)
+  if (regPass && regBar && regText && !regPass.__strengthAttached) {
+    regPass.__strengthAttached = true;
     regPass.addEventListener('input', e => {
       const s = score(e.target.value);
       regBar.style.width = ["5%", "33%", "66%", "100%"][s] || "5%";
@@ -184,12 +107,14 @@ function attachAuthHandlers() {
       const { error } = await supabaseClient.auth.signUp({ email, password });
       if (error) { if (regMsg) regMsg.textContent = error.message || "Registration failed."; return; }
 
+      // Auto-login after sign up
       const { error: loginError } = await supabaseClient.auth.signInWithPassword({ email, password });
       if (loginError) { if (regMsg) regMsg.textContent = "Registered, but login failed. Try logging in."; return; }
 
       if (rememberMe && rememberMe.checked) saveRemember(email);
       window.location.href = "upload.html";
     } catch (err) {
+      console.error('Register error', err);
       if (regMsg) regMsg.textContent = "Registration error. Check console.";
     }
   }
@@ -213,6 +138,7 @@ function attachAuthHandlers() {
 
       window.location.href = "upload.html";
     } catch (err) {
+      console.error('Login error', err);
       if (loginMsg) loginMsg.textContent = "Login error. Check console.";
     }
   }
@@ -229,10 +155,10 @@ async function autoRedirectIfLoggedIn() {
   try {
     const { data } = await supabaseClient.auth.getSession();
     if (data && data.session) window.location.href = "upload.html";
-  } catch (e) {}
+  } catch (e) { /* ignore */ }
 }
 
-// Initialize
+// Initialize after DOM ready
 function initLogin() {
   enableToggleDelegation();
   attachAuthHandlers();
