@@ -1,3 +1,89 @@
+// --- Minimal, non-invasive patch ---
+// Paste this at the very top of login.js (before any other code).
+// It uses event-delegation so Show/Hide always works and attaches the strength bar handler after DOM ready.
+// It is idempotent and will not change your HTML or CSS.
+
+(function () {
+  if (window.__login_patch_installed) return;
+  window.__login_patch_installed = true;
+
+  const $id = id => document.getElementById(id);
+
+  // Event-delegation for Show/Hide (works even if other code errors or runs early)
+  function toggleHandler(ev) {
+    const el = ev.target;
+    if (!el || !el.classList) return;
+    if (!el.classList.contains('toggle-password')) return;
+    const targetId = el.dataset && el.dataset.target;
+    if (!targetId) return;
+    const input = $id(targetId);
+    if (!input) return;
+    const wasPassword = input.type === 'password';
+    input.type = wasPassword ? 'text' : 'password';
+    try { el.textContent = wasPassword ? 'Hide' : 'Show'; } catch (e) {}
+    try { input.focus({ preventScroll: true }); } catch (e) { input.focus(); }
+  }
+
+  // Strength bar updater (safe attach)
+  function attachStrength() {
+    const regPass = $id('regPass');
+    const regBar = $id('regBar');
+    const regText = $id('regText');
+    if (!regPass || !regBar || !regText) return;
+
+    function score(p) {
+      let s = 0;
+      if (!p) return 0;
+      if (p.length >= 6) s++;
+      if ((p.match(/[a-z]/gi) || []).length >= 2) s++;
+      if (/[!@#$%^&*()_\-+=
+
+\[\]
+
+{}|\\:;"'<>,.?/]/.test(p)) s++;
+      return s;
+    }
+
+    // avoid attaching twice
+    if (regPass.__strengthAttached) return;
+    regPass.__strengthAttached = true;
+
+    regPass.addEventListener('input', function (e) {
+      const s = score(e.target.value);
+      regBar.style.width = ["5%", "33%", "66%", "100%"][s] || "5%";
+      regBar.style.background = ["#eee", "#ffe066", "#ffd166", "#2d6a4f"][s] || "#eee";
+      regText.textContent = ["", "Weak", "Medium", "Strong"][s] || "";
+    });
+  }
+
+  // Ensure initial toggle labels reflect input type (Show)
+  function normalizeToggleLabels() {
+    document.querySelectorAll('.toggle-password').forEach(el => {
+      try { el.textContent = 'Show'; } catch (e) {}
+    });
+  }
+
+  function initPatch() {
+    normalizeToggleLabels();
+    attachStrength();
+    // attach delegation once
+    if (!document.__toggleDelegation) {
+      document.addEventListener('click', toggleHandler, { passive: true });
+      document.addEventListener('keydown', function (ev) {
+        if (ev.key !== 'Enter' && ev.key !== ' ') return;
+        const el = ev.target;
+        if (!el || !el.classList) return;
+        if (!el.classList.contains('toggle-password')) return;
+        ev.preventDefault();
+        el.click();
+      });
+      document.__toggleDelegation = true;
+    }
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initPatch);
+  else initPatch();
+})();
 // Robust login.js for Vercel + Supabase
 const SUPABASE_URL = "https://fohzmnvqgtbwglapojuo.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_ooSqDRIkzjzbm_4lIyYmuQ_ylutHG77";
