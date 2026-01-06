@@ -1,11 +1,9 @@
-// Minimal robust login.js — attaches Show/Hide reliably via event delegation
-// and wires auth handlers safely without letting supabase errors stop the UI.
+// Minimal robust login.js — event-delegation for Show/Hide, Supabase auth, Remember Me
 
-// Supabase config (keeps your keys)
 const SUPABASE_URL = "https://fohzmnvqgtbwglapojuo.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_ooSqDRIkzjzbm_4lIyYmuQ_ylutHG77";
 
-// Lazy-safe supabase client (only created if the global exists)
+// Safe supabase init
 let supabaseClient = null;
 try {
   if (typeof supabase !== 'undefined' && supabase && typeof supabase.createClient === 'function') {
@@ -23,7 +21,7 @@ const saveRemember = email => { try { localStorage.setItem(REMEMBER_KEY, email |
 const loadRemember = () => { try { return localStorage.getItem(REMEMBER_KEY) || ''; } catch (e) { return ''; } };
 const clearRemember = () => { try { localStorage.removeItem(REMEMBER_KEY); } catch (e) {} };
 
-// Attach Show/Hide using event delegation so it works even if handlers weren't attached earlier
+// Event-delegation toggle so it always works
 function enableToggleDelegation() {
   document.addEventListener('click', function (ev) {
     const el = ev.target;
@@ -38,7 +36,7 @@ function enableToggleDelegation() {
     try { el.textContent = wasPassword ? 'Hide' : 'Show'; } catch (e) {}
     try { input.focus({ preventScroll: true }); } catch (e) { input.focus(); }
   }, { passive: true });
-  // keyboard accessibility
+
   document.addEventListener('keydown', function (ev) {
     if (ev.key !== 'Enter' && ev.key !== ' ') return;
     const el = ev.target;
@@ -49,7 +47,7 @@ function enableToggleDelegation() {
   });
 }
 
-// Password strength scoring (unchanged)
+// Password strength scoring
 function score(p) {
   let s = 0;
   if (!p) return 0;
@@ -63,7 +61,7 @@ function score(p) {
   return s;
 }
 
-// Wire up auth handlers and Remember Me; safe if supabaseClient is null
+// Attach auth handlers and UI wiring
 function attachAuthHandlers() {
   const regUser = $id("regUser");
   const regPass = $id("regPass");
@@ -147,7 +145,7 @@ function attachAuthHandlers() {
   if (loginBtn && !loginBtn.__attached) { loginBtn.addEventListener('click', login); loginBtn.__attached = true; }
 }
 
-// Auto-redirect if already logged in (safe)
+// Auto-redirect if already logged in
 async function autoRedirectIfLoggedIn() {
   if (!supabaseClient) return;
   try {
@@ -156,14 +154,12 @@ async function autoRedirectIfLoggedIn() {
   } catch (e) { console.warn('autoRedirect error', e); }
 }
 
-// Initialize everything after DOM ready
+// Initialize
 function initLogin() {
   enableToggleDelegation();
   attachAuthHandlers();
   autoRedirectIfLoggedIn();
 }
 
-// Run on DOM ready or immediately if already ready
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initLogin);
 else initLogin();
-
