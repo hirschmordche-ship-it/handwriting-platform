@@ -1,14 +1,12 @@
-// Overwrite login.js with this exact file. This is a minimal, robust drop-in:
-// - Guarantees Show/Hide toggle works via event delegation
-// - Guarantees registration strength bar updates
-// - Keeps Remember Me behavior (localStorage)
-// - Uses Supabase auth if available but never blocks UI if it's not
-// Paste this entire file as login.js and deploy (no other file changes required).
+// Replace your existing login.js with this exact file.
+// Minimal, non-invasive, uses your existing HTML/CSS (no other file changes).
+// Guarantees: Show/Hide works via event delegation; strength bar updates; Remember Me works.
+// Supabase auth used if available but never blocks UI.
 
 const SUPABASE_URL = "https://fohzmnvqgtbwglapojuo.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_ooSqDRIkzjzbm_4lIyYmuQ_ylutHG77";
 
-// Safe, non-blocking Supabase init
+// Safe supabase init (non-blocking)
 let supabaseClient = null;
 try {
   if (typeof supabase !== 'undefined' && supabase && typeof supabase.createClient === 'function') {
@@ -66,7 +64,7 @@ const clearRemember = () => { try { localStorage.removeItem(REMEMBER_KEY); } cat
   });
 })();
 
-// Strength scoring function (same logic used previously)
+// Password scoring (same logic as your snippets)
 function scorePassword(p) {
   let s = 0;
   if (!p) return 0;
@@ -95,6 +93,118 @@ function attachUIHandlers() {
         const widths = ["5%", "33%", "66%", "100%"];
         const colors = ["#eee", "#ffe066", "#ffd166", "#2d6a4f"];
         regBar.style.width = widths[s] || widths[0];
+        regBar.style.background = colors[s] || colors[0];
+        regText.textContent = ["", "Weak", "Medium", "Strong"][s] || "";
+      });
+      // initialize from current value
+      const initial = scorePassword(regPass.value || '');
+      regBar.style.width = ["5%", "33%", "66%", "100%"][initial] || "5%";
+      regBar.style.background = ["#eee", "#ffe066", "#ffd166", "#2d6a4f"][initial] || "#eee";
+      regText.textContent = ["", "Weak", "Medium", "Strong"][initial] || "";
+    }
+
+    // Remember Me: populate
+    const loginUser = $id('loginUser');
+    const rememberMe = $id('rememberMe');
+    const remembered = loadRemember();
+    if (remembered && loginUser) {
+      loginUser.value = remembered;
+      if (rememberMe) rememberMe.checked = true;
+    }
+
+    // Auth handlers (safe if supabaseClient is null)
+    const regBtn = $id('regBtn');
+    const loginBtn = $id('loginBtn');
+    const regUser = $id('regUser');
+    const loginPass = $id('loginPass');
+    const regMsg = $id('regMsg');
+    const loginMsg = $id('loginMsg');
+
+    async function register() {
+      if (regMsg) regMsg.textContent = '';
+      if (loginMsg) loginMsg.textContent = '';
+
+      const email = regUser ? (regUser.value || '').trim() : '';
+      const password = regPass ? regPass.value : '';
+
+      if (!email) { if (regMsg) regMsg.textContent = 'Please enter an email.'; return; }
+      if (scorePassword(password) !== 3) { if (regMsg) regMsg.textContent = 'Weak password. Add length, digits, and symbols.'; return; }
+      if (!supabaseClient) { if (regMsg) regMsg.textContent = 'Auth client not available.'; return; }
+
+      try {
+        const { error } = await supabaseClient.auth.signUp({ email, password });
+        if (error) { if (regMsg) regMsg.textContent = error.message || 'Registration failed.'; return; }
+
+        const { error: loginError } = await supabaseClient.auth.signInWithPassword({ email, password });
+        if (loginError) { if (regMsg) regMsg.textContent = 'Registered, but login failed. Try logging in.'; return; }
+
+        if (rememberMe && rememberMe.checked) saveRemember(email);
+        window.location.href = 'upload.html';
+      } catch (err) {
+        if (regMsg) regMsg.textContent = 'Registration error. Try again.';
+      }
+    }
+
+    async function login() {
+      if (regMsg) regMsg.textContent = '';
+      if (loginMsg) loginMsg.textContent = '';
+
+      const email = loginUser ? (loginUser.value || '').trim() : '';
+      const password = loginPass ? loginPass.value : '';
+
+      if (!email || !password) { if (loginMsg) loginMsg.textContent = 'Enter email and password.'; return; }
+      if (!supabaseClient) { if (loginMsg) loginMsg.textContent = 'Auth client not available.'; return; }
+
+      try {
+        const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+        if (error) { if (loginMsg) loginMsg.textContent = error.message || 'Invalid credentials.'; return; }
+
+        if (rememberMe && rememberMe.checked) saveRemember(email);
+        else clearRemember();
+
+        window.location.href = 'upload.html';
+      } catch (err) {
+        if (loginMsg) loginMsg.textContent = 'Login error. Try again.';
+      }
+    }
+
+    if (regBtn && !regBtn.__attached) { regBtn.addEventListener('click', register); regBtn.__attached = true; }
+    if (loginBtn && !loginBtn.__attached) { loginBtn.addEventListener('click', login); loginBtn.__attached = true; }
+  } catch (e) {
+    // swallow errors so UI remains responsive
+  }
+}
+
+// MutationObserver to reattach if DOM changes
+function installObserver() {
+  if (document.__loginObserverInstalled) return;
+  try {
+    const obs = new MutationObserver(() => {
+      attachUIHandlers();
+      document.querySelectorAll('.toggle-password').forEach(el => {
+        try { el.textContent = 'Show'; } catch (e) {}
+      });
+    });
+    obs.observe(document.documentElement || document.body, { childList: true, subtree: true });
+    document.__loginObserverInstalled = true;
+  } catch (e) {}
+}
+
+// Auto-redirect if session exists (non-blocking)
+async function autoRedirectIfLoggedIn() {
+  if (!supabaseClient) return;
+  try {
+    const { data } = await supabaseClient.auth.getSession();
+    if (data && data.session) window.location.href = 'upload.html';
+  } catch (e) {}
+}
+
+// Initialize after DOM ready
+onReady(function init() {
+  attachUIHandlers();
+  installObserver();
+  autoRedirectIfLoggedIn();
+});
         regBar.style.background = colors[s] || colors[0];
         regText.textContent = ["", "Weak", "Medium", "Strong"][s] || "";
       });
