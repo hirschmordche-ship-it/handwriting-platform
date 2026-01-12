@@ -263,7 +263,7 @@ body.dark-mode .mode-toggle-knob {
     font-weight: 500;
     backdrop-filter: blur(18px);
     -webkit-backdrop-filter: blur(18px);
-    width: 86px;
+    width: 94px;
     justify-content: space-between;
     overflow: hidden;
 }
@@ -666,3 +666,13 @@ body.rtl .field-row {
     pointer-events: none !important;
 }
 
+.mode-toggle-track {
+    direction: ltr !important;
+}
+body.rtl .mode-toggle-circle.dark-active .mode-toggle-knob {
+    transform: translateX(16px) !important;
+}
+
+body.rtl .mode-toggle-circle:not(.dark-active) .mode-toggle-knob {
+    transform: translateX(0) !important;
+}
