@@ -1,5 +1,6 @@
 alert("JS is working");
 console.log("External JS is running");
+alert("EXTERNAL JS IS NOW RUNNING");
 
 // Supabase setup
 const SUPABASE_URL = "https://fohzmnvqgtbwglapojuo.supabase.co";
