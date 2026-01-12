@@ -1,5 +1,6 @@
 // Language state
 let currentLang = "en";
+let pendingRegisterEmail = "";
 
 // i18n dictionary
 const i18n = {
@@ -42,7 +43,14 @@ const i18n = {
     regTermsMissing: "Please agree to the terms.",
     regPasswordMismatch: "Passwords do not match.",
     regPasswordInvalid: "Password does not meet the requirements.",
+    regStartError: "Could not start registration. Please try again.",
+    regVerifyError: "Invalid or expired code. Please try again.",
+    regVerifyPrompt: "Enter the 6-digit code we sent to your email.",
+    regVerifyTitle: "Verify your email",
     loginInvalid: "Please enter email and password.",
+    loginError: "Login failed. Please check your details.",
+
+    "footer.text": `Need help? Contact us <a href="contactus.html">here</a>`,
 
     "terms.full": `
 <p><strong>1. Data Usage</strong><br>
@@ -57,8 +65,8 @@ You agree not to upload harmful, illegal, or copyrighted material without permis
 <p><strong>4. Platform Rights</strong><br>
 We may update or modify the service at any time.</p>
 
-<p><strong>5. Contact</strong><br>
-For questions, contact support.</p>
+<p><strong>5. Contact and Support</strong><br>
+If you have questions, issues, or need assistance, you can reach us through our <a href="contactus.html">contact page</a>.</p>
 `
   },
   he: {
@@ -100,7 +108,14 @@ For questions, contact support.</p>
     regTermsMissing: "אנא אשר את תנאי השימוש.",
     regPasswordMismatch: "הסיסמאות אינן תואמות.",
     regPasswordInvalid: "הסיסמה אינה עומדת בדרישות.",
+    regStartError: "לא ניתן להתחיל הרשמה. נסה שוב.",
+    regVerifyError: "קוד שגוי או שפג תוקפו. נסה שוב.",
+    regVerifyPrompt: "הזן את הקוד בן 6 הספרות שנשלח לאימייל שלך.",
+    regVerifyTitle: "אימות אימייל",
     loginInvalid: "אנא הזן אימייל וסיסמה.",
+    loginError: "ההתחברות נכשלה. בדוק את הפרטים שלך.",
+
+    "footer.text": `צריך עזרה? צרו קשר <a href="contactus.html">כאן</a>`,
 
     "terms.full": `
 <p><strong>1. שימוש בנתונים</strong><br>
@@ -117,8 +132,8 @@ For questions, contact support.</p>
 <p><strong>4. זכויות הפלטפורמה</strong><br>
 אנו רשאים לעדכן, לשנות או להפסיק את השירות בכל עת.</p>
 
-<p><strong>5. יצירת קשר</strong><br>
-לשאלות או בקשות, ניתן לפנות לתמיכה.</p>
+<p><strong>5. יצירת קשר ותמיכה</strong><br>
+לשאלות, בעיות או צורך בעזרה — ניתן לפנות אלינו דרך <a href="contactus.html">דף יצירת הקשר</a>.</p>
 `
   }
 };
@@ -158,6 +173,15 @@ const termsOk = document.getElementById("termsOk");
 const termsText = document.getElementById("termsText");
 const openTerms = document.getElementById("openTerms");
 
+// Verification modal
+const verifyBackdrop = document.getElementById("verifyBackdrop");
+const verifyClose = document.getElementById("verifyClose");
+const verifyTitle = document.getElementById("verifyTitle");
+const verifyMessage = document.getElementById("verifyMessage");
+const verifyCodeInput = document.getElementById("verifyCodeInput");
+const verifySubmit = document.getElementById("verifySubmit");
+const verifyMessages = document.getElementById("verifyMessages");
+
 // Modal helpers
 function openModal(title, message) {
   modalTitle.textContent = title;
@@ -190,6 +214,28 @@ termsClose.addEventListener("click", closeTerms);
 termsOk.addEventListener("click", closeTerms);
 termsBackdrop.addEventListener("click", (e) => {
   if (e.target === termsBackdrop) closeTerms();
+});
+
+// Verification modal helpers
+function openVerifyModal(email) {
+  const dict = i18n[currentLang];
+  pendingRegisterEmail = email;
+  verifyTitle.textContent = dict.regVerifyTitle;
+  verifyMessage.textContent = dict.regVerifyPrompt;
+  verifyCodeInput.value = "";
+  verifyMessages.textContent = "";
+  verifyBackdrop.hidden = false;
+  verifyCodeInput.focus();
+}
+
+function closeVerifyModal() {
+  verifyBackdrop.hidden = true;
+  pendingRegisterEmail = "";
+}
+
+verifyClose.addEventListener("click", closeVerifyModal);
+verifyBackdrop.addEventListener("click", (e) => {
+  if (e.target === verifyBackdrop) closeVerifyModal();
 });
 
 // Tabs
@@ -263,6 +309,7 @@ function setLanguage(lang) {
     }
   });
 
+  // Password toggle labels
   document.querySelectorAll(".password-toggle").forEach(btn => {
     const targetId = btn.getAttribute("data-target");
     const input = document.getElementById(targetId);
@@ -270,8 +317,15 @@ function setLanguage(lang) {
     btn.textContent = isText ? dict.hide : dict.show;
   });
 
+  // Terms text if open
   if (!termsBackdrop.hidden) {
     termsText.innerHTML = dict["terms.full"];
+  }
+
+  // Footer text
+  const footer = document.getElementById("footerText");
+  if (footer) {
+    footer.innerHTML = dict["footer.text"];
   }
 
   localStorage.setItem("authLang", lang);
@@ -392,17 +446,21 @@ function updateRegisterButtonState() {
   }
 }
 
-// Register submit
-registerForm.addEventListener("submit", (e) => {
+// REGISTER FLOW:
+// 1) /api/auth/start-register -> sends code email
+// 2) openVerifyModal
+// 3) /api/auth/verify-register -> if success => redirect upload.html
+
+registerForm.addEventListener("submit", async (e) => {
   e.preventDefault();
   regMessages.textContent = "";
 
-  const btn = document.getElementById("registerButton");
-  if (!btn.classList.contains("enabled")) {
-    return;
-  }
-
   const dict = i18n[currentLang];
+
+  const btn = document.getElementById("registerButton");
+  if (!btn.classList.contains("enabled")) return;
+
+  const email = regEmail.value.trim();
   const password = regPassword.value;
   const confirm = regConfirmPassword.value;
 
@@ -422,16 +480,71 @@ registerForm.addEventListener("submit", (e) => {
     return;
   }
 
-  openModal(dict["register.title"], "Registration would be processed here.");
+  try {
+    btn.disabled = true;
 
-  regPassword.value = "";
-  regConfirmPassword.value = "";
-  updateStrengthUI("");
-  updateRegisterButtonState();
+    const res = await fetch("/api/auth/start-register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password, lang: currentLang })
+    });
+
+    if (!res.ok) {
+      throw new Error("start-register failed");
+    }
+
+    // Email with code sent successfully
+    openVerifyModal(email);
+  } catch (err) {
+    console.error(err);
+    regMessages.textContent = dict.regStartError;
+  } finally {
+    btn.disabled = false;
+  }
 });
 
-// Login submit
-loginForm.addEventListener("submit", (e) => {
+// Verify code submit
+verifySubmit.addEventListener("click", async () => {
+  const dict = i18n[currentLang];
+  verifyMessages.textContent = "";
+
+  const code = (verifyCodeInput.value || "").trim();
+  if (!pendingRegisterEmail || !code) {
+    verifyMessages.textContent = dict.regVerifyError;
+    return;
+  }
+
+  try {
+    verifySubmit.disabled = true;
+
+    const res = await fetch("/api/auth/verify-register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: pendingRegisterEmail, code })
+    });
+
+    if (!res.ok) {
+      throw new Error("verify failed");
+    }
+
+    const data = await res.json();
+    if (!data.success) {
+      verifyMessages.textContent = dict.regVerifyError;
+      return;
+    }
+
+    // Verified successfully -> redirect to upload page
+    window.location.href = "upload.html";
+  } catch (err) {
+    console.error(err);
+    verifyMessages.textContent = dict.regVerifyError;
+  } finally {
+    verifySubmit.disabled = false;
+  }
+});
+
+// Login submit -> redirect to dashboard on success
+loginForm.addEventListener("submit", async (e) => {
   e.preventDefault();
   loginMessages.textContent = "";
 
@@ -444,13 +557,35 @@ loginForm.addEventListener("submit", (e) => {
     return;
   }
 
-  if (rememberMe.checked) {
-    localStorage.setItem("rememberedEmail", email);
-  } else {
-    localStorage.removeItem("rememberedEmail");
-  }
+  try {
+    const res = await fetch("/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password })
+    });
 
-  openModal(dict["login.title"], "Login would be processed here.");
+    if (!res.ok) {
+      throw new Error("login failed");
+    }
+
+    const data = await res.json();
+    if (!data.success) {
+      loginMessages.textContent = dict.loginError;
+      return;
+    }
+
+    // success -> dashboard
+    if (rememberMe.checked) {
+      localStorage.setItem("rememberedEmail", email);
+    } else {
+      localStorage.removeItem("rememberedEmail");
+    }
+
+    window.location.href = "dashboard.html";
+  } catch (err) {
+    console.error(err);
+    loginMessages.textContent = dict.loginError;
+  }
 });
 
 // Forgot password
@@ -464,6 +599,7 @@ forgotPasswordBtn.addEventListener("click", () => {
 function init() {
   modalBackdrop.hidden = true;
   termsBackdrop.hidden = true;
+  verifyBackdrop.hidden = true;
 
   const savedTheme = localStorage.getItem("themeMode");
   setMode(savedTheme === "dark" ? "dark" : "light");
