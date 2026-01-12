@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en" class="no-js">
+<head>
+  <meta charset="UTF-8">
+  <title>Auth | Register / Login</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+
+  <link rel="stylesheet" href="index.css">
+</head>
+<body class="ltr light-mode">
+  <div class="background"></div>
+
+  <div class="auth-wrapper">
+    <div class="auth-panel glass">
+      <div class="auth-header">
+        <div class="header-left">
+          <!-- Dark mode circular slider -->
+          <button class="mode-toggle-circle" id="modeToggle" type="button" aria-label="Toggle dark mode">
+            <div class="mode-toggle-track">
+              <div class="mode-toggle-knob">
+                <span class="mode-icon">☀️</span>
+              </div>
+            </div>
+          </button>
+        </div>
+
+        <div class="tab-group" id="tabGroup">
+          <button class="tab-button active" data-tab="register" id="tabRegister">
+            Register
+          </button>
+          <button class="tab-button" data-tab="login" id="tabLogin">
+            Login
+          </button>
+        </div>
+
+        <div class="header-right">
+          <!-- Android-style language pill toggle -->
+          <div class="lang-toggle-pill lang-en" id="langToggle">
+            <div class="lang-toggle-thumb"></div>
+            <span data-lang="en">EN</span>
+            <span data-lang="he">עבר</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="auth-body">
+        <!-- Register form -->
+        <form id="registerForm" class="form-section active" autocomplete="on">
+          <h2 class="form-title" data-i18n="register.title">Create account</h2>
+
+          <div class="field-group">
+            <label for="regEmail" data-i18n="register.emailLabel">Email</label>
+            <input
+              id="regEmail"
+              name="email"
+              type="email"
+              autocomplete="email"
+              required
+              placeholder="you@example.com"
+              data-i18n-placeholder="register.emailPlaceholder"
+            >
+          </div>
+
+          <div class="field-group password-group">
+            <label for="regPassword" data-i18n="register.passwordLabel">Password</label>
+            <div class="password-wrapper">
+              <input
+                id="regPassword"
+                name="password"
+                type="password"
+                autocomplete="new-password"
+                required
+                data-i18n-placeholder="register.passwordPlaceholder"
+                placeholder="Password"
+              >
+              <button
+                type="button"
+                class="password-toggle"
+                data-target="regPassword"
+                id="regPasswordToggle"
+              >
+                Show
+              </button>
+            </div>
+            <div class="password-help" data-i18n="password.help">
+              Minimum 8 characters, with numbers and symbols.
+            </div>
+            <div class="strength-meter">
+              <div class="strength-bar" id="regStrengthBar"></div>
+            </div>
+            <div class="strength-label" id="regStrengthLabel"></div>
+          </div>
+
+          <div class="field-group password-group">
+            <label for="regConfirmPassword" data-i18n="register.confirmLabel">Confirm password</label>
+            <div class="password-wrapper">
+              <input
+                id="regConfirmPassword"
+                name="confirmPassword"
+                type="password"
+                autocomplete="new-password"
+                required
+                data-i18n-placeholder="register.confirmPlaceholder"
+                placeholder="Confirm password"
+              >
+              <button
+                type="button"
+                class="password-toggle"
+                data-target="regConfirmPassword"
+                id="regConfirmPasswordToggle"
+              >
+                Show
+              </button>
+            </div>
+          </div>
+
+          <div class="field-group checkbox-group">
+            <label class="checkbox-label">
+              <input type="checkbox" id="regTerms">
+              <span data-i18n="register.terms.before">I agree to the</span>
+              <button
+                type="button"
+                class="terms-link"
+                id="openTerms"
+                data-i18n="register.terms.word"
+              >
+                terms
+              </button>
+              <span data-i18n="register.terms.after">.</span>
+            </label>
+          </div>
+
+          <div class="form-messages" id="regMessages"></div>
+
+          <button
+            type="submit"
+            class="primary-button"
+            id="registerButton"
+            data-i18n="register.submit"
+          >
+            Register
+          </button>
+        </form>
+
+        <!-- Login form -->
+        <form id="loginForm" class="form-section" autocomplete="on">
+          <h2 class="form-title" data-i18n="login.title">Welcome back</h2>
+
+          <div class="field-group">
+            <label for="loginEmail" data-i18n="login.emailLabel">Email</label>
+            <input
+              id="loginEmail"
+              name="email"
+              type="email"
+              autocomplete="email"
+              required
+              placeholder="you@example.com"
+              data-i18n-placeholder="login.emailPlaceholder"
+            >
+          </div>
+
+          <div class="field-group password-group">
+            <label for="loginPassword" data-i18n="login.passwordLabel">Password</label>
+            <div class="password-wrapper">
+              <input
+                id="loginPassword"
+                name="password"
+                type="password"
+                autocomplete="current-password"
+                required
+                data-i18n-placeholder="login.passwordPlaceholder"
+                placeholder="Password"
+              >
+              <button
+                type="button"
+                class="password-toggle"
+                data-target="loginPassword"
+                id="loginPasswordToggle"
+              >
+                Show
+              </button>
+            </div>
+          </div>
+
+          <div class="field-row">
+            <div class="checkbox-group">
+              <label class="checkbox-label">
+                <input type="checkbox" id="rememberMe">
+                <span data-i18n="login.remember">Remember me</span>
+              </label>
+            </div>
+            <button type="button" class="link-button" id="forgotPassword" data-i18n="login.forgot">
+              Forgot password?
+            </button>
+          </div>
+
+          <div class="form-messages" id="loginMessages"></div>
+
+          <button type="submit" class="primary-button" id="loginButton" data-i18n="login.submit">
+            Login
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Info modal -->
+  <div class="modal-backdrop" id="modalBackdrop" hidden>
+    <div class="modal glass">
+      <div class="modal-header">
+        <h3 id="modalTitle">Info</h3>
+        <button type="button" class="modal-close" id="modalClose">✕</button>
+      </div>
+      <div class="modal-body" id="modalBody"></div>
+      <div class="modal-footer">
+        <button type="button" class="primary-button" id="modalOk" data-i18n="modal.ok">
+          OK
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Terms modal -->
+  <div class="modal-backdrop" id="termsBackdrop" hidden>
+    <div class="modal glass">
+      <div class="modal-header">
+        <h3 id="termsTitle">Terms of Service</h3>
+        <button type="button" class="modal-close" id="termsClose">✕</button>
+      </div>
+      <div class="modal-body terms-text" id="termsText"></div>
+      <div class="modal-footer">
+        <button type="button" class="primary-button" id="termsOk">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="index.js?v=3"></script>
+</body>
+</html>
+
