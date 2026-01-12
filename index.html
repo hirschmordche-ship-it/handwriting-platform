@@ -112,7 +112,7 @@
                         <label class="checkbox-label">
                             <input type="checkbox" id="regTerms">
                             <span data-i18n="register.terms">
-                                I agree to the terms.
+                                I agree to the <button type="button" class="terms-link" id="openTerms">terms</button>.
                             </span>
                         </label>
                     </div>
@@ -203,6 +203,34 @@
             </div>
         </div>
     </div>
+<!-- Terms Modal -->
+<div class="modal-backdrop" id="termsBackdrop" hidden>
+    <div class="modal glass">
+        <div class="modal-header">
+            <h3>Terms of Service</h3>
+            <button type="button" class="modal-close" id="termsClose">✕</button>
+        </div>
+        <div class="modal-body terms-text">
+            <p><strong>1. Data Usage</strong><br>
+            By using this platform, you agree that any handwriting samples, glyphs, or uploaded images may be stored and processed for analysis, improvement of the service, and security purposes.</p>
+
+            <p><strong>2. Account Deletion</strong><br>
+            If you delete your account, your login information will be removed. However, <strong>your uploaded images, handwriting samples, and glyphs will remain stored permanently</strong> for research, training, and platform improvement.</p>
+
+            <p><strong>3. User Responsibilities</strong><br>
+            You agree not to upload harmful, illegal, or copyrighted material without permission.</p>
+
+            <p><strong>4. Platform Rights</strong><br>
+            We may update or modify the service at any time.</p>
+
+            <p><strong>5. Contact</strong><br>
+            For questions, contact support.</p>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="primary-button" id="termsOk">OK</button>
+        </div>
+    </div>
+</div>
 
     <script src="index.js?v=1"></script>
 </body>
