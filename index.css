@@ -676,3 +676,13 @@ body.rtl .mode-toggle-circle.dark-active .mode-toggle-knob {
 body.rtl .mode-toggle-circle:not(.dark-active) .mode-toggle-knob {
     transform: translateX(0) !important;
 }
+.lang-toggle-pill.lang-en .lang-toggle-thumb {
+    transform: translateX(0) !important;
+}
+
+.lang-toggle-pill.lang-he .lang-toggle-thumb {
+    transform: translateX(100%) !important;
+}
+.lang-toggle-pill span {
+    direction: ltr !important;
+}
