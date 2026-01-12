@@ -1,3 +1,4 @@
+let userInitiatedRegister = false;
 // Language state
 let currentLang = "en"; // "en" or "he"
 
@@ -328,7 +329,10 @@ registerForm.addEventListener("submit", (e) => {
 
     // Here you’d call Supabase registration.
     // For now, just show modal and clear password fields.
+    if (userInitiatedRegister) {
     openModal(dict["register.title"], "Registration would be processed here.");
+    userInitiatedRegister = false;
+}
     regPassword.value = "";
     regConfirmPassword.value = "";
     updateStrengthUI("");
