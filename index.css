@@ -546,3 +546,20 @@ body.rtl .field-row {
     opacity: 0 !important;
     pointer-events: none !important;
 }
+.terms-text {
+    max-height: 60vh;
+    overflow-y: auto;
+    padding-right: 6px;
+}
+.terms-link {
+    background: none;
+    border: none;
+    color: #0f766e;
+    text-decoration: underline;
+    cursor: pointer;
+    font-size: inherit;
+    padding: 0;
+}
+body.dark-mode .terms-link {
+    color: #67e8f9;
+}
