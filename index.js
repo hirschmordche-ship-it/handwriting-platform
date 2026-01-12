@@ -366,6 +366,7 @@ forgotPasswordBtn.addEventListener("click", () => {
 
 // Auto-initialize language, theme, remembered user
 function init() {
+    modalBackdrop.hidden = true;
     // Theme
     const savedTheme = localStorage.getItem("themeMode");
     setMode(savedTheme === "dark" ? "dark" : "light");
