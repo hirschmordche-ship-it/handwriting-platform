@@ -563,3 +563,9 @@ body.rtl .field-row {
 body.dark-mode .terms-link {
     color: #67e8f9;
 }
+#termsBackdrop[hidden] {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
