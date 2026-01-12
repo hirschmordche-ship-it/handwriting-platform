@@ -392,5 +392,27 @@ function init() {
     updateStrengthUI("");
 }
 
+// Terms modal
+const termsBackdrop = document.getElementById("termsBackdrop");
+const openTerms = document.getElementById("openTerms");
+const termsClose = document.getElementById("termsClose");
+const termsOk = document.getElementById("termsOk");
+
+openTerms.addEventListener("click", () => {
+    termsBackdrop.hidden = false;
+});
+
+termsClose.addEventListener("click", () => {
+    termsBackdrop.hidden = true;
+});
+
+termsOk.addEventListener("click", () => {
+    termsBackdrop.hidden = true;
+});
+
+termsBackdrop.addEventListener("click", (e) => {
+    if (e.target === termsBackdrop) termsBackdrop.hidden = true;
+});
+
 document.addEventListener("DOMContentLoaded", init);
 
