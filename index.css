@@ -308,9 +308,9 @@ body.dark-mode .lang-toggle-pill.lang-en span[data-lang="en"] {
   color: #020617;
 }
 
-/* עבר active */
+/* עבר active – pixel-precise fix */
 .lang-toggle-pill.lang-he .lang-toggle-thumb {
-  transform: translateX(100%) !important;
+  transform: translateX(46px) !important; /* 94/2 - ~1px for border */
 }
 .lang-toggle-pill.lang-he span[data-lang="he"] {
   color: #0f172a;
@@ -515,7 +515,7 @@ body.dark-mode .password-help {
   background: linear-gradient(135deg, #ffffff, #e5e7eb);
   color: #111827;
   box-shadow: 0 16px 30px rgba(15, 23, 42, 0.35);
-  transition: transform var(--transition-fast), box-shadow var(--transition-fast), filter var(--transition-fast);
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast), filter var(--transition-fast), opacity 0.25s ease;
 }
 
 .primary-button:hover {
@@ -631,6 +631,55 @@ body.dark-mode .terms-link {
   padding-right: 6px;
 }
 
+/* Verification input */
+.verify-code-input {
+  width: 100%;
+  margin-top: 8px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--input-border-light);
+  padding: 8px 12px;
+  font-size: 1rem;
+  letter-spacing: 0.2em;
+  text-align: center;
+  background: var(--input-bg-light);
+}
+
+body.dark-mode .verify-code-input {
+  background: var(--input-bg-dark);
+  border-color: var(--input-border-dark);
+  color: var(--text-main-dark);
+}
+
+/* Footer */
+.footer {
+  margin-top: 20px;
+  text-align: center;
+  font-size: 0.82rem;
+  color: var(--text-muted-light);
+  opacity: 0.85;
+  padding-top: 8px;
+  border-top: 1px solid rgba(148, 163, 184, 0.35);
+}
+
+body.dark-mode .footer {
+  color: var(--text-muted-dark);
+  border-top-color: rgba(51, 65, 85, 0.7);
+}
+
+.footer a {
+  color: #0f766e;
+  text-decoration: underline;
+  font-weight: 500;
+}
+
+body.dark-mode .footer a {
+  color: #67e8f9;
+}
+
+body.rtl .footer {
+  direction: rtl;
+}
+
 /* RTL / LTR */
 body.ltr {
   direction: ltr;
@@ -664,16 +713,12 @@ body.rtl .field-row {
 
 /* Hidden modals truly disappear */
 #modalBackdrop[hidden],
-#termsBackdrop[hidden] {
+#termsBackdrop[hidden],
+#verifyBackdrop[hidden] {
   display: none !important;
   visibility: hidden !important;
   opacity: 0 !important;
   pointer-events: none !important;
   touch-action: none !important;
-}
-
-/* Restore browser behavior */
-body {
-  overscroll-behavior-y: auto !important;
 }
 
