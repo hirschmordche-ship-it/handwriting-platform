@@ -5,9 +5,9 @@
   "type": "module",
   "scripts": {
     "build": "echo 'no build'"
+  },
+  "dependencies": {
+    "resend": "latest",
+    "@supabase/supabase-js": "latest"
   }
-},
-"dependencies": {
-  "resend": "latest",
-  "@supabase/supabase-js": "latest"
 }
