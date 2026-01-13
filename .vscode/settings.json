@@ -1,0 +1,25 @@
+{
+    "files.exclude": {
+        "**/.DS_Store": false,
+        "**/.git": false,
+        "**/.hg": false,
+        "**/.svn": false,
+        "**/*.crswap": false,
+        "**/Thumbs.db": false
+    },
+    "files.watcherExclude": {
+        "**/.git/objects/**": false,
+        "**/.git/subtree-cache/**": false,
+        "**/.hg/store/**": false
+    },
+    "explorer.autoRevealExclude": {
+        "**/bower_components": false,
+        "**/node_modules": false
+    },
+    "search.exclude": {
+        "**/*.code-search": false,
+        "**/bower_components": false,
+        "**/node_modules": false
+    },
+    "terminal.integrated.localEchoExcludePrograms": []
+}
