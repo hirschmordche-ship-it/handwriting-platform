@@ -1,3 +1,11 @@
+console.log("ENV CHECK:");
+console.log("SUPABASE_URL:", process.env.SUPABASE_URL);
+console.log("SERVICE_ROLE:", process.env.SUPABASE_SERVICE_ROLE_KEY);
+console.log("RESEND_API_KEY:", process.env.RESEND_API_KEY);
+console.log("EMAIL_FROM:", process.env.VERIFICATION_EMAIL_FROM);
+console.log("SUBJECT_EN:", process.env.VERIFICATION_EMAIL_SUBJECT_EN);
+console.log("SUBJECT_HE:", process.env.VERIFICATION_EMAIL_SUBJECT_HE);
+
 import { Resend } from 'resend';
 import { createClient } from '@supabase/supabase-js';
 
