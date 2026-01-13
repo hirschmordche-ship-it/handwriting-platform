@@ -1,6 +1,6 @@
 {
       "version": 2,
-      "functions": {
+      "function": {
             "api/**/*.js": {
                   "runtime": "nodejs24.x"
             }
