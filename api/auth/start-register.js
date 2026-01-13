@@ -1,13 +1,5 @@
-console.log("ENV CHECK:");
-console.log("SUPABASE_URL:", process.env.SUPABASE_URL);
-console.log("SERVICE_ROLE:", process.env.SUPABASE_SERVICE_ROLE_KEY);
-console.log("RESEND_API_KEY:", process.env.RESEND_API_KEY);
-console.log("EMAIL_FROM:", process.env.VERIFICATION_EMAIL_FROM);
-console.log("SUBJECT_EN:", process.env.VERIFICATION_EMAIL_SUBJECT_EN);
-console.log("SUBJECT_HE:", process.env.VERIFICATION_EMAIL_SUBJECT_HE);
-
-import { Resend } from 'resend';
-import { createClient } from '@supabase/supabase-js';
+const { Resend } = require('resend');
+const { createClient } = require('@supabase/supabase-js');
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -16,7 +8,7 @@ const supabase = createClient(
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
@@ -74,5 +66,4 @@ export default async function handler(req, res) {
     console.error('start-register error:', err);
     return res.status(500).json({ error: 'Internal server error' });
   }
-}
-
+};
