@@ -1,11 +1,11 @@
 {
+  "type": "module"
+}
+{
   "name": "api-only",
   "version": "1.0.0",
   "private": true,
   "scripts": {
     "build": "echo 'no build'"
   }
-}
-{
-  "type": "module"
 }
