@@ -6,3 +6,6 @@
     "build": "echo 'no build'"
   }
 }
+{
+  "type": "module"
+}
