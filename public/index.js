@@ -1,93 +1,3 @@
-// ===============================
-// GLOBAL DEBUG LOGGER
-// ===============================
-function debugLog(...args) {
-  console.log("[DEBUG]", ...args);
-}
-
-// ===============================
-// REGISTER FLOW (FULL DEBUG)
-// ===============================
-registerForm.addEventListener("submit", async (e) => {
-  e.preventDefault();
-  debugLog("=== REGISTER: form submitted ===");
-
-  const email = regEmail.value.trim();
-  const password = regPassword.value;
-  const confirm = regConfirmPassword.value;
-
-  debugLog("Email:", email);
-  debugLog("Password length:", password.length);
-  debugLog("Confirm length:", confirm.length);
-  debugLog("Terms checked:", regTerms.checked);
-  debugLog("Language:", currentLang);
-
-  const evaluation = evaluatePassword(password);
-  debugLog("Password evaluation:", evaluation);
-
-  if (!regTerms.checked) return debugLog("Terms missing");
-  if (!evaluation.valid) return debugLog("Password invalid");
-  if (password !== confirm) return debugLog("Passwords mismatch");
-
-  const payload = { email, language: currentLang };
-  debugLog("Sending payload to backend:", payload);
-
-  const res = await fetch("/api/auth/start-register", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload)
-  });
-
-  debugLog("Backend status:", res.status);
-
-  const data = await res.json();
-  debugLog("Backend JSON:", data);
-
-  if (data.debug) {
-    data.debug.forEach((line) => debugLog("[BACKEND]", line));
-  }
-
-  if (!data.success) return debugLog("Backend reported failure");
-
-  debugLog("Opening verify modal");
-  openVerifyModal(email);
-});
-
-// ===============================
-// VERIFY FLOW (FULL DEBUG)
-// ===============================
-verifySubmit.addEventListener("click", async () => {
-  debugLog("=== VERIFY: button clicked ===");
-
-  const code = verifyCodeInput.value.trim();
-  debugLog("Code entered:", code);
-  debugLog("Pending email:", pendingRegisterEmail);
-
-  const payload = { email: pendingRegisterEmail, code };
-  debugLog("Sending payload to backend:", payload);
-
-  const res = await fetch("/api/auth/verify-register", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload)
-  });
-
-  debugLog("Backend status:", res.status);
-
-  const data = await res.json();
-  debugLog("Backend JSON:", data);
-
-  if (data.debug) {
-    data.debug.forEach((line) => debugLog("[BACKEND]", line));
-  }
-
-  if (!data.success) return debugLog("Verification failed");
-
-  debugLog("Redirecting to upload.html");
-  window.location.href = "upload.html";
-});
-
-
 // Language state
 let currentLang = "en";
 let pendingRegisterEmail = "";
@@ -123,7 +33,8 @@ const i18n = {
       tooShort: "Too short",
       weak: "Weak",
       medium: "Medium",
-      strong: "Strong"
+      strong: "Strong",
+      complete: "Password complete"
     },
 
     show: "Show",
@@ -188,7 +99,8 @@ If you have questions, issues, or need assistance, you can reach us through our 
       tooShort: "קצר מדי",
       weak: "חלשה",
       medium: "בינונית",
-      strong: "חזקה"
+      strong: "חזקה",
+      complete: "הסיסמה הושלמה"
     },
 
     show: "הצג",
@@ -444,7 +356,7 @@ setupPasswordToggle("regPasswordToggle", "regPassword");
 setupPasswordToggle("regConfirmPasswordToggle", "regConfirmPassword");
 setupPasswordToggle("loginPasswordToggle", "loginPassword");
 
-// Password evaluation
+// Password evaluation (updated to mathematical model)
 function evaluatePassword(password) {
   const minLength = 8;
   const hasHebrew = /[\u0590-\u05FF]/.test(password);
@@ -458,58 +370,66 @@ function evaluatePassword(password) {
   }
 
   if (!hasNumber || !hasSymbol) {
-    return { valid: false, score: 1, reason: "weak" };
+    return { valid: false, score: 0, reason: "weak" };
   }
 
   if (hasEnglish && !hasUppercase) {
-    return { valid: false, score: 2, reason: "medium" };
+    return { valid: false, score: 0, reason: "medium" };
   }
 
   let score = 0;
-  if (password.length >= 8) score++;
-  if (password.length >= 12) score++;
-  if (hasNumber) score++;
-  if (hasSymbol) score++;
-  if (hasEnglish && hasUppercase) score++;
-  if (hasHebrew) score++;
 
-  let level;
-  if (score <= 2) level = "weak";
-  else if (score <= 4) level = "medium";
-  else level = "strong";
+  // Length: max 50%
+  const maxLength = 8;
+  const lengthScore = Math.min(password.length, maxLength) / maxLength;
+  score += lengthScore * 50;
 
-  return { valid: true, score, reason: level };
+  // Number: +20% if present
+  if (hasNumber) score += 20;
+
+  // Symbol: +20% if present
+  if (hasSymbol) score += 20;
+
+  // Uppercase: +10% if English letters exist and at least one uppercase
+  if (hasEnglish && hasUppercase) score += 10;
+
+  score = Math.min(score, 100);
+
+  return { valid: true, score, reason: "ok" };
 }
 
 function updateStrengthUI(password) {
   const dict = i18n[currentLang].strength;
   const result = evaluatePassword(password);
+  const score = result.score;
 
-  let width = 0;
-  let color = "transparent";
-  let labelText = "";
-
-  if (result.reason === "tooShort") {
-    width = 20;
-    color = "var(--danger)";
-    labelText = dict.tooShort;
-  } else if (result.reason === "weak") {
-    width = 40;
-    color = "var(--danger)";
-    labelText = dict.weak;
-  } else if (result.reason === "medium") {
-    width = 70;
-    color = "var(--warning)";
-    labelText = dict.medium;
-  } else if (result.reason === "strong") {
-    width = 100;
-    color = "var(--success)";
-    labelText = dict.strong;
+  if (!password) {
+    regStrengthBar.style.width = "0";
+    regStrengthBar.style.background = "transparent";
+    regStrengthLabel.textContent = "";
+    return;
   }
 
-  regStrengthBar.style.width = password ? width + "%" : "0";
+  let label = "";
+  let color = "var(--danger)";
+
+  if (score === 100) {
+    label = dict.complete;
+    color = "var(--success)";
+  } else if (score <= 33) {
+    label = dict.weak;
+    color = "var(--danger)";
+  } else if (score <= 66) {
+    label = dict.medium;
+    color = "var(--warning)";
+  } else {
+    label = dict.strong;
+    color = "var(--success)";
+  }
+
+  regStrengthBar.style.width = score + "%";
   regStrengthBar.style.background = color;
-  regStrengthLabel.textContent = password ? labelText : "";
+  regStrengthLabel.textContent = label;
 }
 
 regPassword.addEventListener("input", (e) => {
@@ -576,14 +496,13 @@ registerForm.addEventListener("submit", async (e) => {
     const res = await fetch("/api/auth/start-register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, language: currentLang })
+      body: JSON.stringify({ email, password, lang: currentLang })
     });
 
     if (!res.ok) {
       throw new Error("start-register failed");
     }
 
-    // Email with code sent successfully
     openVerifyModal(email);
   } catch (err) {
     console.error(err);
@@ -623,7 +542,6 @@ verifySubmit.addEventListener("click", async () => {
       return;
     }
 
-    // Verified successfully -> redirect to upload page
     window.location.href = "upload.html";
   } catch (err) {
     console.error(err);
@@ -651,7 +569,7 @@ loginForm.addEventListener("submit", async (e) => {
     const res = await fetch("/api/auth/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email })
+      body: JSON.stringify({ email, password })
     });
 
     if (!res.ok) {
@@ -664,7 +582,6 @@ loginForm.addEventListener("submit", async (e) => {
       return;
     }
 
-    // success -> dashboard
     if (rememberMe.checked) {
       localStorage.setItem("rememberedEmail", email);
     } else {
