@@ -477,6 +477,11 @@ body.dark-mode .password-help {
   font-size: 0.72rem;
 }
 
+#passwordRequirements {
+  color: var(--danger);
+  font-weight: 500;
+}
+
 /* Field row */
 .field-row {
   display: flex;
