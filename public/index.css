@@ -456,18 +456,20 @@ body.dark-mode .password-help {
 
 /* Strength meter */
 .strength-meter {
-  margin-top: 6px;
-  height: 5px;
-  border-radius: 999px;
-  background: rgba(148, 163, 184, 0.28);
+  width: 60%;
+  max-width: 250px;
+  margin: 0 auto;
+  height: 6px;
+  background: rgba(255,255,255,0.15);
+  border-radius: 4px;
   overflow: hidden;
 }
 
 .strength-bar {
   height: 100%;
-  width: 0;
-  border-radius: inherit;
-  transition: width var(--transition-med), background var(--transition-med);
+  width: 0%;
+  background: var(--danger);
+  transition: width 0.3s ease, background 0.3s ease;
 }
 
 .strength-label {
