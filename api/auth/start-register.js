@@ -8,9 +8,7 @@ const supabase = createClient(
 
 export default async function handler(req, res) {
   const debug = [];
-  const log = (...args) => {
-    try { debug.push(args.join(" ")); } catch (e) {}
-  };
+  const log = (...args) => debug.push(args.join(" "));
 
   log("START-REGISTER: route hit");
 
@@ -20,7 +18,7 @@ export default async function handler(req, res) {
       return res.status(405).json({ success: false, error: "Method not allowed", debug });
     }
 
-    const { email, password, lang } = req.body || {};
+    const { email, lang } = req.body || {};
     log("Received payload:", JSON.stringify({ email, lang }));
 
     if (!email || typeof email !== "string") {
@@ -28,11 +26,9 @@ export default async function handler(req, res) {
       return res.status(400).json({ success: false, error: "Email is required", debug });
     }
 
-    // Generate a 6-digit verification code
     const code = Math.floor(100000 + Math.random() * 900000).toString();
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString(); // 10 minutes
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
 
-    // Insert into pending_registrations (or your chosen table)
     const { data, error } = await supabase
       .from("pending_registrations")
       .insert({
@@ -52,11 +48,6 @@ export default async function handler(req, res) {
 
     log("Inserted pending registration for:", email);
 
-    // Optionally also insert into email_verifications table if you use it
-    // await supabase.from("email_verifications").insert({ email, code, expires_at: expiresAt });
-
-    // NOTE: Do not send SMTP credentials here. Email sending should use env vars on the server.
-    // Return success (do not return sensitive data in production)
     return res.status(200).json({
       success: true,
       next: "verify",
