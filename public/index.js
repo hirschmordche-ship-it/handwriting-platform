@@ -1,3 +1,93 @@
+// ===============================
+// GLOBAL DEBUG LOGGER
+// ===============================
+function debugLog(...args) {
+  console.log("[DEBUG]", ...args);
+}
+
+// ===============================
+// REGISTER FLOW (FULL DEBUG)
+// ===============================
+registerForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  debugLog("=== REGISTER: form submitted ===");
+
+  const email = regEmail.value.trim();
+  const password = regPassword.value;
+  const confirm = regConfirmPassword.value;
+
+  debugLog("Email:", email);
+  debugLog("Password length:", password.length);
+  debugLog("Confirm length:", confirm.length);
+  debugLog("Terms checked:", regTerms.checked);
+  debugLog("Language:", currentLang);
+
+  const evaluation = evaluatePassword(password);
+  debugLog("Password evaluation:", evaluation);
+
+  if (!regTerms.checked) return debugLog("Terms missing");
+  if (!evaluation.valid) return debugLog("Password invalid");
+  if (password !== confirm) return debugLog("Passwords mismatch");
+
+  const payload = { email, language: currentLang };
+  debugLog("Sending payload to backend:", payload);
+
+  const res = await fetch("/api/auth/start-register", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
+
+  debugLog("Backend status:", res.status);
+
+  const data = await res.json();
+  debugLog("Backend JSON:", data);
+
+  if (data.debug) {
+    data.debug.forEach((line) => debugLog("[BACKEND]", line));
+  }
+
+  if (!data.success) return debugLog("Backend reported failure");
+
+  debugLog("Opening verify modal");
+  openVerifyModal(email);
+});
+
+// ===============================
+// VERIFY FLOW (FULL DEBUG)
+// ===============================
+verifySubmit.addEventListener("click", async () => {
+  debugLog("=== VERIFY: button clicked ===");
+
+  const code = verifyCodeInput.value.trim();
+  debugLog("Code entered:", code);
+  debugLog("Pending email:", pendingRegisterEmail);
+
+  const payload = { email: pendingRegisterEmail, code };
+  debugLog("Sending payload to backend:", payload);
+
+  const res = await fetch("/api/auth/verify-register", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
+
+  debugLog("Backend status:", res.status);
+
+  const data = await res.json();
+  debugLog("Backend JSON:", data);
+
+  if (data.debug) {
+    data.debug.forEach((line) => debugLog("[BACKEND]", line));
+  }
+
+  if (!data.success) return debugLog("Verification failed");
+
+  debugLog("Redirecting to upload.html");
+  window.location.href = "upload.html";
+});
+
+
 // Language state
 let currentLang = "en";
 let pendingRegisterEmail = "";
