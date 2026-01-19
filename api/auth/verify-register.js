@@ -1,4 +1,60 @@
 // api/auth/verify-register.js
+import { createClient } from "@supabase/supabase-js";
+
+export default async function handler(req, res) {
+  const debug = [];
+  const log = (...a) => debug.push(a.join(" "));
+
+  log("VERIFY-REGISTER: route hit");
+
+  try {
+    const { email, code } = req.body;
+    log("Email:", email);
+    log("Code:", code);
+
+    const supabase = createClient(
+      process.env.SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_ROLE_KEY
+    );
+
+    const { data: record, error } = await supabase
+      .from("email_verifications")
+      .select("*")
+      .eq("email", email)
+      .eq("code", code)
+      .eq("used", false)
+      .single();
+
+    if (error || !record) {
+      log("Verification lookup failed:", JSON.stringify(error));
+      return res.status(400).json({ success: false, debug });
+    }
+
+    log("Verification record found:", JSON.stringify(record));
+
+    await supabase
+      .from("email_verifications")
+      .update({ used: true })
+      .eq("id", record.id);
+
+    log("Marked code as used");
+
+    await supabase
+      .from("users")
+      .insert({ email });
+
+    log("Inserted into users");
+
+    return res.status(200).json({ success: true, debug });
+
+  } catch (err) {
+    log("Exception:", err.toString());
+    return res.status(500).json({ success: false, debug });
+  }
+}
+
+
+// api/auth/verify-register.js
 
 import { createClient } from "@supabase/supabase-js";
 
