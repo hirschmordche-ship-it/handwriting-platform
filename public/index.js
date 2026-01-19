@@ -404,15 +404,15 @@ function updateStrengthUI(password) {
     color = "var(--danger)";
     labelText = dict.tooShort;
   } else if (result.reason === "weak") {
-    width = 35;
+    width = 40;
     color = "var(--danger)";
     labelText = dict.weak;
   } else if (result.reason === "medium") {
-    width = 60;
+    width = 70;
     color = "var(--warning)";
     labelText = dict.medium;
   } else if (result.reason === "strong") {
-    width = 90;
+    width = 100;
     color = "var(--success)";
     labelText = dict.strong;
   }
@@ -486,7 +486,7 @@ registerForm.addEventListener("submit", async (e) => {
     const res = await fetch("/api/auth/start-register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password, lang: currentLang })
+      body: JSON.stringify({ email, language: currentLang })
     });
 
     if (!res.ok) {
@@ -561,7 +561,7 @@ loginForm.addEventListener("submit", async (e) => {
     const res = await fetch("/api/auth/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password })
+      body: JSON.stringify({ email })
     });
 
     if (!res.ok) {
