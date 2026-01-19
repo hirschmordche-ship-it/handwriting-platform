@@ -1,4 +1,25 @@
-console.log("🔵 [START-REGISTER] File loaded");
+console.log("🔵 File loaded");
+
+try {
+  const { Resend } = require('resend');
+  console.log("🟢 Resend imported");
+} catch (err) {
+  console.error("🔴 Resend import failed:", err);
+}
+
+try {
+  const { createClient } = require('@supabase/supabase-js');
+  console.log("🟢 Supabase imported");
+} catch (err) {
+  console.error("🔴 Supabase import failed:", err);
+}
+
+console.log("🟡 ENV CHECK:", {
+  SUPABASE_URL: process.env.SUPABASE_URL,
+  SERVICE_ROLE: process.env.SUPABASE_SERVICE_ROLE_KEY,
+  RESEND_API_KEY: process.env.RESEND_API_KEY
+});
+
 
 const { Resend } = require('resend');
 console.log("🟣 Resend imported");
