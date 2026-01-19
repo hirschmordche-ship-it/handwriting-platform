@@ -460,3 +460,5 @@ function openModal(title, message) {
 }
 
 function closeModal()
+
+document.addEventListener("DOMContentLoaded", init);
