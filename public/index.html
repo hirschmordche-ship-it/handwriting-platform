@@ -87,16 +87,22 @@
               </button>
             </div>
             
-            <div id="passwordRequirements" class="password-help"></div>
+            <!-- Missing requirements (red) -->
+<div id="passwordRequirements" class="password-help"></div>
 
-            <div class="password-help" data-i18n="password.help">
-              Minimum 8 characters, with numbers and symbols.
-            </div>
-            <div class="strength-meter">
-              <div class="strength-bar" id="regStrengthBar"></div>
-            </div>
-            <div class="strength-label" id="regStrengthLabel"></div>
-          </div>
+<!-- Strength meter -->
+<div class="strength-meter">
+  <div class="strength-bar" id="regStrengthBar"></div>
+</div>
+
+<!-- Strength label -->
+<div id="regStrengthLabel" class="password-help"></div>
+
+<!-- Static help text (beneath everything) -->
+<div class="password-help" data-i18n="password.help">
+  Minimum 8 characters, with numbers and symbols.
+</div>
+
 
           <div class="field-group password-group">
             <label for="regConfirmPassword" data-i18n="register.confirmLabel">Confirm password</label>
