@@ -16,7 +16,8 @@ export default async function handler(req, res) {
   try {
     console.log("STEP 1: Body received", req.body);
 
-    const { email, password, lang } = await req.json();
+    const body = JSON.parse(req.body);
+const { email, password, lang } = body;
 
     if (!email || !password || !lang) {
       return res.status(400).json({ error: "Missing required fields" });
