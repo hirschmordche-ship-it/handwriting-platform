@@ -11,7 +11,7 @@ export default async function handler(req, res) {
   }
 
   const body = JSON.parse(req.body);
-const { email, password, lang } = body;
+const { email, password } = body;
 
   if (!email || !password) {
     return res.status(400).json({ success: false, error: 'Missing fields' });
