@@ -29,17 +29,17 @@
         </div>
 
         <div class="tab-group" id="tabGroup">
-          <button class="tab-button active" data-tab="register" id="tabRegister">
+          <button class="tab-button active" data-tab="register" id="tabRegister" type="button">
             Register
           </button>
-          <button class="tab-button" data-tab="login" id="tabLogin">
+          <button class="tab-button" data-tab="login" id="tabLogin" type="button">
             Login
           </button>
         </div>
 
         <div class="header-right">
           <!-- Android-style language pill toggle -->
-          <div class="lang-toggle-pill lang-en" id="langToggle">
+          <div class="lang-toggle-pill lang-en" id="langToggle" role="button" tabindex="0" aria-label="Toggle language">
             <div class="lang-toggle-thumb"></div>
             <span data-lang="en">EN</span>
             <span data-lang="he">עבר</span>
@@ -49,7 +49,7 @@
 
       <div class="auth-body">
         <!-- Register form -->
-        <form id="registerForm" class="form-section active" autocomplete="on">
+        <form id="registerForm" class="form-section active" autocomplete="on" method="post" action="/api/auth/start-register" novalidate>
           <h2 class="form-title" data-i18n="register.title">Create account</h2>
 
           <div class="field-group">
@@ -76,33 +76,35 @@
                 required
                 data-i18n-placeholder="register.passwordPlaceholder"
                 placeholder="Password"
+                aria-describedby="passwordRequirements regStrengthLabel"
               >
               <button
                 type="button"
                 class="password-toggle"
                 data-target="regPassword"
                 id="regPasswordToggle"
+                aria-label="Toggle password visibility"
               >
                 Show
               </button>
             </div>
-            
+
             <!-- Missing requirements (red) -->
-<div id="passwordRequirements" class="password-help"></div>
+            <div id="passwordRequirements" class="password-help" aria-live="polite"></div>
 
-<!-- Strength meter -->
-<div class="strength-meter">
-  <div class="strength-bar" id="regStrengthBar"></div>
-</div>
+            <!-- Strength meter -->
+            <div class="strength-meter" aria-hidden="true">
+              <div class="strength-bar" id="regStrengthBar" style="width:0%"></div>
+            </div>
 
-<!-- Strength label -->
-<div id="regStrengthLabel" class="password-help"></div>
+            <!-- Strength label -->
+            <div id="regStrengthLabel" class="password-help" aria-live="polite"></div>
 
-<!-- Static help text (beneath everything) -->
-<div class="password-help" data-i18n="password.help">
-  Minimum 8 characters, with numbers and symbols.
-</div>
-
+            <!-- Static help text (beneath everything) -->
+            <div class="password-help" data-i18n="password.help">
+              Minimum 8 characters, with numbers and symbols.
+            </div>
+          </div>
 
           <div class="field-group password-group">
             <label for="regConfirmPassword" data-i18n="register.confirmLabel">Confirm password</label>
@@ -121,6 +123,7 @@
                 class="password-toggle"
                 data-target="regConfirmPassword"
                 id="regConfirmPasswordToggle"
+                aria-label="Toggle confirm password visibility"
               >
                 Show
               </button>
@@ -129,13 +132,14 @@
 
           <div class="field-group checkbox-group">
             <label class="checkbox-label">
-              <input type="checkbox" id="regTerms">
+              <input type="checkbox" id="regTerms" name="terms" required>
               <span data-i18n="register.terms.before">I agree to the</span>
               <button
                 type="button"
                 class="terms-link"
                 id="openTerms"
                 data-i18n="register.terms.word"
+                aria-haspopup="dialog"
               >
                 terms
               </button>
@@ -143,7 +147,7 @@
             </label>
           </div>
 
-          <div class="form-messages" id="regMessages"></div>
+          <div class="form-messages" id="regMessages" aria-live="polite"></div>
 
           <button
             type="submit"
@@ -156,7 +160,7 @@
         </form>
 
         <!-- Login form -->
-        <form id="loginForm" class="form-section" autocomplete="on">
+        <form id="loginForm" class="form-section" autocomplete="on" method="post" action="/api/auth/login" novalidate>
           <h2 class="form-title" data-i18n="login.title">Welcome back</h2>
 
           <div class="field-group">
@@ -189,6 +193,7 @@
                 class="password-toggle"
                 data-target="loginPassword"
                 id="loginPasswordToggle"
+                aria-label="Toggle password visibility"
               >
                 Show
               </button>
@@ -198,7 +203,7 @@
           <div class="field-row">
             <div class="checkbox-group">
               <label class="checkbox-label">
-                <input type="checkbox" id="rememberMe">
+                <input type="checkbox" id="rememberMe" name="remember">
                 <span data-i18n="login.remember">Remember me</span>
               </label>
             </div>
@@ -207,7 +212,7 @@
             </button>
           </div>
 
-          <div class="form-messages" id="loginMessages"></div>
+          <div class="form-messages" id="loginMessages" aria-live="polite"></div>
 
           <button type="submit" class="primary-button" id="loginButton" data-i18n="login.submit">
             Login
@@ -224,10 +229,10 @@
 
   <!-- Info modal -->
   <div class="modal-backdrop" id="modalBackdrop" hidden>
-    <div class="modal glass">
+    <div class="modal glass" role="dialog" aria-modal="true" aria-labelledby="modalTitle" aria-hidden="true">
       <div class="modal-header">
         <h3 id="modalTitle">Info</h3>
-        <button type="button" class="modal-close" id="modalClose">✕</button>
+        <button type="button" class="modal-close" id="modalClose" aria-label="Close">✕</button>
       </div>
       <div class="modal-body" id="modalBody"></div>
       <div class="modal-footer">
@@ -240,10 +245,10 @@
 
   <!-- Terms modal -->
   <div class="modal-backdrop" id="termsBackdrop" hidden>
-    <div class="modal glass">
+    <div class="modal glass" role="dialog" aria-modal="true" aria-labelledby="termsTitle" aria-hidden="true">
       <div class="modal-header">
         <h3 id="termsTitle">Terms of Service</h3>
-        <button type="button" class="modal-close" id="termsClose">✕</button>
+        <button type="button" class="modal-close" id="termsClose" aria-label="Close">✕</button>
       </div>
       <div class="modal-body terms-text" id="termsText"></div>
       <div class="modal-footer">
@@ -254,10 +259,10 @@
 
   <!-- Verification modal -->
   <div class="modal-backdrop" id="verifyBackdrop" hidden>
-    <div class="modal glass">
+    <div class="modal glass" role="dialog" aria-modal="true" aria-labelledby="verifyTitle" aria-hidden="true">
       <div class="modal-header">
         <h3 id="verifyTitle">Verify your email</h3>
-        <button type="button" class="modal-close" id="verifyClose">✕</button>
+        <button type="button" class="modal-close" id="verifyClose" aria-label="Close">✕</button>
       </div>
       <div class="modal-body">
         <p id="verifyMessage">
@@ -270,8 +275,9 @@
           inputmode="numeric"
           autocomplete="one-time-code"
           class="verify-code-input"
+          aria-label="Verification code"
         >
-        <div class="form-messages" id="verifyMessages"></div>
+        <div class="form-messages" id="verifyMessages" aria-live="polite"></div>
       </div>
       <div class="modal-footer">
         <button type="button" class="primary-button" id="verifySubmit">
@@ -279,12 +285,12 @@
         </button>
       </div>
     </div>
-  
+  </div>
+
   <script src="index.js?v=4"></script>
 
-         <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
-<script>eruda.init();</script>
-    
+  <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
+  <script>eruda.init();</script>
+
 </body>
 </html>
-
