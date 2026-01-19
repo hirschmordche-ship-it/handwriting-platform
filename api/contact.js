@@ -6,7 +6,8 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { email, message } = await req.json();
+    const body = JSON.parse(req.body);
+const { email, password, lang } = body;
 
     if (!email || !message) {
       return res.status(400).json({ error: "Missing email or message" });
