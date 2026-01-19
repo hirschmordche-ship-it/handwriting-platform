@@ -147,3 +147,7 @@ h2,h3 {
   color:#2563eb; 
   margin-bottom:10px; 
 }
+#passwordRequirements {
+  color: var(--danger);
+  font-weight: 500;
+}
