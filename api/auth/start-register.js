@@ -1,3 +1,4 @@
+console.log("🔥 FILE LOADED");
 import getRawBody from "raw-body";
 import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
