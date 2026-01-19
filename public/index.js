@@ -1,13 +1,8 @@
-console.log("JS START");
-// ======================================================
-// LANGUAGE + GLOBAL STATE
-// ======================================================
+// Language state
 let currentLang = "en";
 let pendingRegisterEmail = "";
 
-// ======================================================
-// I18N DICTIONARY
-// ======================================================
+// i18n dictionary
 const i18n = {
   en: {
     "register.title": "Create account",
@@ -75,7 +70,6 @@ We may update or modify the service at any time.</p>
 If you have questions, issues, or need assistance, you can reach us through our <a href="contactus.html">contact page</a>.</p>
 `
   },
-
   he: {
     "register.title": "יצירת חשבון",
     "register.emailLabel": "אימייל",
@@ -146,9 +140,7 @@ If you have questions, issues, or need assistance, you can reach us through our 
   }
 };
 
-// ======================================================
-// DOM REFERENCES
-// ======================================================
+// DOM references
 const body = document.body;
 const tabRegister = document.getElementById("tabRegister");
 const tabLogin = document.getElementById("tabLogin");
@@ -192,9 +184,174 @@ const verifyCodeInput = document.getElementById("verifyCodeInput");
 const verifySubmit = document.getElementById("verifySubmit");
 const verifyMessages = document.getElementById("verifyMessages");
 
-// ======================================================
-// PASSWORD EVALUATION (MATHEMATICAL MODEL)
-// ======================================================
+// Modal helpers
+function openModal(title, message) {
+  modalTitle.textContent = title;
+  modalBody.textContent = message;
+  modalBackdrop.hidden = false;
+}
+
+function closeModal() {
+  modalBackdrop.hidden = true;
+}
+
+modalClose.addEventListener("click", closeModal);
+modalOk.addEventListener("click", closeModal);
+modalBackdrop.addEventListener("click", (e) => {
+  if (e.target === modalBackdrop) closeModal();
+});
+
+// Terms modal
+openTerms.addEventListener("click", () => {
+  const dict = i18n[currentLang];
+  termsText.innerHTML = dict["terms.full"];
+  termsBackdrop.hidden = false;
+});
+
+function closeTerms() {
+  termsBackdrop.hidden = true;
+}
+
+termsClose.addEventListener("click", closeTerms);
+termsOk.addEventListener("click", closeTerms);
+termsBackdrop.addEventListener("click", (e) => {
+  if (e.target === termsBackdrop) closeTerms();
+});
+
+// Verification modal helpers
+function openVerifyModal(email) {
+  const dict = i18n[currentLang];
+  pendingRegisterEmail = email;
+  verifyTitle.textContent = dict.regVerifyTitle;
+  verifyMessage.textContent = dict.regVerifyPrompt;
+  verifyCodeInput.value = "";
+  verifyMessages.textContent = "";
+  verifyBackdrop.hidden = false;
+  verifyCodeInput.focus();
+}
+
+function closeVerifyModal() {
+  verifyBackdrop.hidden = true;
+  pendingRegisterEmail = "";
+}
+
+verifyClose.addEventListener("click", closeVerifyModal);
+verifyBackdrop.addEventListener("click", (e) => {
+  if (e.target === verifyBackdrop) closeVerifyModal();
+});
+
+// Tabs
+function setActiveTab(tab) {
+  if (tab === "register") {
+    tabRegister.classList.add("active");
+    tabLogin.classList.remove("active");
+    registerForm.classList.add("active");
+    loginForm.classList.remove("active");
+  } else {
+    tabLogin.classList.add("active");
+    tabRegister.classList.remove("active");
+    loginForm.classList.add("active");
+    registerForm.classList.remove("active");
+  }
+}
+
+tabRegister.addEventListener("click", () => setActiveTab("register"));
+tabLogin.addEventListener("click", () => setActiveTab("login"));
+
+// Dark mode
+function setMode(mode) {
+  body.classList.remove("light-mode", "dark-mode");
+  if (mode === "dark") {
+    body.classList.add("dark-mode");
+    modeToggle.classList.add("dark-active");
+    if (modeIcon) modeIcon.textContent = "🌙";
+  } else {
+    body.classList.add("light-mode");
+    modeToggle.classList.remove("dark-active");
+    if (modeIcon) modeIcon.textContent = "☀️";
+  }
+  localStorage.setItem("themeMode", mode);
+}
+
+modeToggle.addEventListener("click", () => {
+  const isDark = body.classList.contains("dark-mode");
+  setMode(isDark ? "light" : "dark");
+});
+
+// Language
+function setLanguage(lang) {
+  currentLang = lang;
+
+  body.classList.remove("ltr", "rtl");
+  if (lang === "he") {
+    body.classList.add("rtl");
+    document.documentElement.lang = "he";
+    langToggle.classList.remove("lang-en");
+    langToggle.classList.add("lang-he");
+  } else {
+    body.classList.add("ltr");
+    document.documentElement.lang = "en";
+    langToggle.classList.remove("lang-he");
+    langToggle.classList.add("lang-en");
+  }
+
+  const dict = i18n[lang];
+
+  document.querySelectorAll("[data-i18n]").forEach(el => {
+    const key = el.getAttribute("data-i18n");
+    if (dict[key]) {
+      el.textContent = dict[key];
+    }
+  });
+
+  document.querySelectorAll("[data-i18n-placeholder]").forEach(el => {
+    const key = el.getAttribute("data-i18n-placeholder");
+    if (dict[key]) {
+      el.placeholder = dict[key];
+    }
+  });
+
+  // Password toggle labels
+  document.querySelectorAll(".password-toggle").forEach(btn => {
+    const targetId = btn.getAttribute("data-target");
+    const input = document.getElementById(targetId);
+    const isText = input && input.type === "text";
+    btn.textContent = isText ? dict.hide : dict.show;
+  });
+
+  // Terms text if open
+  if (!termsBackdrop.hidden) {
+    termsText.innerHTML = dict["terms.full"];
+  }
+
+  // Footer text
+  const footer = document.getElementById("footerText");
+  if (footer) {
+    footer.innerHTML = dict["footer.text"];
+  }
+
+  localStorage.setItem("authLang", lang);
+}
+
+langToggle.addEventListener("click", () => {
+  const next = currentLang === "en" ? "he" : "en";
+  setLanguage(next);
+});
+
+// Password toggles
+function setupPasswordToggle(buttonId, inputId) {
+  const button = document.getElementById(buttonId);
+  const input = document.getElementById(inputId);
+  if (!button || !input) return;
+
+  button.addEventListener("click", () => {
+    const dict = i18n[currentLang];
+    const isHidden = input.type === "password";
+    input.type = isHidden ? "text" : "password";
+    button.textContent = isHidden ? dict.hide : dict.show;
+  });
+}
+// Password evaluation (mathematical model with missing requirements)
 function evaluatePassword(password) {
   const minLength = 8;
   const hasEnglish = /[A-Za-z]/.test(password);
@@ -203,46 +360,47 @@ function evaluatePassword(password) {
   const hasSymbol = /[^A-Za-z0-9\u0590-\u05FF]/.test(password);
 
   let score = 0;
+  const missing = [];
 
   // Length (max 50%)
   const lengthScore = Math.min(password.length, minLength) / minLength;
   score += lengthScore * 50;
+  if (password.length < minLength) missing.push("length");
 
   // Number (20%)
   if (hasNumber) score += 20;
+  else missing.push("number");
 
   // Symbol (20%)
   if (hasSymbol) score += 20;
+  else missing.push("symbol");
 
   // Uppercase (10%)
   if (hasEnglish && hasUppercase) score += 10;
+  else if (hasEnglish) missing.push("uppercase");
 
   score = Math.min(score, 100);
 
-  const missing = [];
-  if (password.length < minLength) missing.push("length");
-  if (!hasNumber) missing.push("number");
-  if (!hasSymbol) missing.push("symbol");
-  if (hasEnglish && !hasUppercase) missing.push("uppercase");
-
-  return { score, missing };
+  return {
+    valid: score === 100,
+    score,
+    missing
+  };
 }
 
-// ======================================================
-// UPDATE STRENGTH BAR UI
-// ======================================================
+// Strength bar + live missing-requirements text
 function updateStrengthUI(password) {
   const dict = i18n[currentLang].strength;
   const result = evaluatePassword(password);
   const score = result.score;
 
-  console.log("[DEBUG] Score:", score, "Missing:", result.missing);
+  const reqBox = document.getElementById("passwordRequirements");
 
   if (!password) {
     regStrengthBar.style.width = "0";
     regStrengthBar.style.background = "transparent";
     regStrengthLabel.textContent = "";
-    regStrengthBar.title = "";
+    if (reqBox) reqBox.textContent = "";
     return;
   }
 
@@ -266,15 +424,11 @@ function updateStrengthUI(password) {
   regStrengthBar.style.width = score + "%";
   regStrengthBar.style.background = color;
   regStrengthLabel.textContent = label;
-  regStrengthBar.title = score + "%";
 
-  const help = document.querySelector(".password-help");
-  if (help) {
+  // Live checklist above the bar
+  if (reqBox) {
     if (score === 100) {
-      help.textContent =
-        currentLang === "he"
-          ? "הסיסמה עומדת בכל הדרישות."
-          : "Password meets all requirements.";
+      reqBox.textContent = "";
     } else {
       const hints = {
         length: currentLang === "he" ? "אורך" : "length",
@@ -282,16 +436,14 @@ function updateStrengthUI(password) {
         symbol: currentLang === "he" ? "סימן" : "symbol",
         uppercase: currentLang === "he" ? "אות גדולה" : "uppercase"
       };
-      help.textContent =
-        (currentLang === "he" ? "חסר: " : "Missing: ") +
-        result.missing.map(k => hints[k]).join(", ");
+
+      const missingText = result.missing.map(k => hints[k]).join(", ");
+      reqBox.textContent =
+        (currentLang === "he" ? "חסר: " : "Missing: ") + missingText;
     }
   }
 }
 
-// ======================================================
-// PASSWORD INPUT LISTENERS
-// ======================================================
 regPassword.addEventListener("input", (e) => {
   updateStrengthUI(e.target.value);
   updateRegisterButtonState();
@@ -299,30 +451,33 @@ regPassword.addEventListener("input", (e) => {
 regConfirmPassword.addEventListener("input", updateRegisterButtonState);
 regTerms.addEventListener("change", updateRegisterButtonState);
 
-// ======================================================
-// REGISTER BUTTON ENABLE LOGIC
-// ======================================================
+// Register button enable logic
 function updateRegisterButtonState() {
   const password = regPassword.value;
   const confirm = regConfirmPassword.value;
   const terms = regTerms.checked;
 
-  const score = evaluatePassword(password).score;
-  const valid = score === 100 && password === confirm && terms;
+  const evaluation = evaluatePassword(password);
+  const valid = evaluation.valid && password === confirm && terms;
 
   const btn = document.getElementById("registerButton");
-  if (valid) btn.classList.add("enabled");
-  else btn.classList.remove("enabled");
+  if (valid) {
+    btn.classList.add("enabled");
+  } else {
+    btn.classList.remove("enabled");
+  }
 }
+// REGISTER FLOW:
+// 1) /api/auth/start-register -> sends code email
+// 2) openVerifyModal
+// 3) /api/auth/verify-register -> if success => redirect upload.html
 
-// ======================================================
-// REGISTER FLOW
-// ======================================================
 registerForm.addEventListener("submit", async (e) => {
   e.preventDefault();
   regMessages.textContent = "";
 
   const dict = i18n[currentLang];
+
   const btn = document.getElementById("registerButton");
   if (!btn.classList.contains("enabled")) return;
 
@@ -332,6 +487,12 @@ registerForm.addEventListener("submit", async (e) => {
 
   if (!regTerms.checked) {
     regMessages.textContent = dict.regTermsMissing;
+    return;
+  }
+
+  const evaluation = evaluatePassword(password);
+  if (!evaluation.valid) {
+    regMessages.textContent = dict.regPasswordInvalid;
     return;
   }
 
@@ -349,7 +510,9 @@ registerForm.addEventListener("submit", async (e) => {
       body: JSON.stringify({ email, password, lang: currentLang })
     });
 
-    if (!res.ok) throw new Error("start-register failed");
+    if (!res.ok) {
+      throw new Error("start-register failed");
+    }
 
     openVerifyModal(email);
   } catch (err) {
@@ -360,14 +523,12 @@ registerForm.addEventListener("submit", async (e) => {
   }
 });
 
-// ======================================================
-// VERIFY FLOW
-// ======================================================
+// Verify code submit
 verifySubmit.addEventListener("click", async () => {
   const dict = i18n[currentLang];
   verifyMessages.textContent = "";
 
-  const code = verifyCodeInput.value.trim();
+  const code = (verifyCodeInput.value || "").trim();
   if (!pendingRegisterEmail || !code) {
     verifyMessages.textContent = dict.regVerifyError;
     return;
@@ -382,7 +543,9 @@ verifySubmit.addEventListener("click", async () => {
       body: JSON.stringify({ email: pendingRegisterEmail, code })
     });
 
-    if (!res.ok) throw new Error("verify failed");
+    if (!res.ok) {
+      throw new Error("verify failed");
+    }
 
     const data = await res.json();
     if (!data.success) {
@@ -399,9 +562,7 @@ verifySubmit.addEventListener("click", async () => {
   }
 });
 
-// ======================================================
-// LOGIN FLOW
-// ======================================================
+// Login submit -> redirect to dashboard on success
 loginForm.addEventListener("submit", async (e) => {
   e.preventDefault();
   loginMessages.textContent = "";
@@ -422,7 +583,9 @@ loginForm.addEventListener("submit", async (e) => {
       body: JSON.stringify({ email, password })
     });
 
-    if (!res.ok) throw new Error("login failed");
+    if (!res.ok) {
+      throw new Error("login failed");
+    }
 
     const data = await res.json();
     if (!data.success) {
@@ -443,23 +606,39 @@ loginForm.addEventListener("submit", async (e) => {
   }
 });
 
-// ======================================================
-// FORGOT PASSWORD
-// ======================================================
-document.getElementById("forgotPassword").addEventListener("click", () => {
+// Forgot password
+const forgotPasswordBtn = document.getElementById("forgotPassword");
+forgotPasswordBtn.addEventListener("click", () => {
   const dict = i18n[currentLang];
   openModal(dict["login.forgot"], dict.forgotInfo);
 });
+// Init
+function init() {
+  modalBackdrop.hidden = true;
+  termsBackdrop.hidden = true;
+  verifyBackdrop.hidden = true;
 
-// ======================================================
-// MODAL HELPERS
-// ======================================================
-function openModal(title, message) {
-  modalTitle.textContent = title;
-  modalBody.textContent = message;
-  modalBackdrop.hidden = false;
+  const savedTheme = localStorage.getItem("themeMode");
+  setMode(savedTheme === "dark" ? "dark" : "light");
+
+  const savedLang = localStorage.getItem("authLang");
+  setLanguage(savedLang === "he" ? "he" : "en");
+
+  const rememberedEmail = localStorage.getItem("rememberedEmail");
+  if (rememberedEmail) {
+    loginEmail.value = rememberedEmail;
+    setActiveTab("login");
+  } else {
+    setActiveTab("register");
+  }
+
+  // Initialize strength UI + button state
+  updateStrengthUI("");
+  updateRegisterButtonState();
 }
 
-function closeModal()
-
 document.addEventListener("DOMContentLoaded", init);
+
+setupPasswordToggle("regPasswordToggle", "regPassword");
+setupPasswordToggle("regConfirmPasswordToggle", "regConfirmPassword");
+setupPasswordToggle("loginPasswordToggle", "loginPassword");
