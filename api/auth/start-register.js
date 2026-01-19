@@ -1,107 +1,70 @@
 // api/auth/start-register.js
 import { createClient } from "@supabase/supabase-js";
 
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
+
 export default async function handler(req, res) {
   const debug = [];
-  const log = (...a) => debug.push(a.join(" "));
+  const log = (...args) => {
+    try { debug.push(args.join(" ")); } catch (e) {}
+  };
 
   log("START-REGISTER: route hit");
 
   try {
     if (req.method !== "POST") {
       log("Invalid method:", req.method);
-      return res.status(405).json({ success: false, debug });
+      return res.status(405).json({ success: false, error: "Method not allowed", debug });
     }
 
-    const { email, language } = req.body;
-    log("Received email:", email);
-    log("Received language:", language);
+    const { email, password, lang } = req.body || {};
+    log("Received payload:", JSON.stringify({ email, lang }));
 
-    const supabase = createClient(
-      process.env.SUPABASE_URL,
-      process.env.SUPABASE_SERVICE_ROLE_KEY
-    );
+    if (!email || typeof email !== "string") {
+      log("Missing or invalid email");
+      return res.status(400).json({ success: false, error: "Email is required", debug });
+    }
 
+    // Generate a 6-digit verification code
     const code = Math.floor(100000 + Math.random() * 900000).toString();
-    log("Generated code:", code);
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString(); // 10 minutes
 
-    const expires = new Date(Date.now() + 1000 * 60 * 10).toISOString();
-    log("Expires at:", expires);
-
-    const { error } = await supabase
-      .from("email_verifications")
-      .insert({ email, code, expires_at: expires });
-
-    if (error) {
-      log("Supabase insert error:", JSON.stringify(error));
-      return res.status(500).json({ success: false, debug });
-    }
-
-    log("Inserted into email_verifications");
-
-    return res.status(200).json({
-      success: true,
-      debug
-    });
-
-  } catch (err) {
-    log("Exception:", err.toString());
-    return res.status(500).json({ success: false, debug });
-  }
-}
-
-
-// api/auth/start-register.js
-
-import { createClient } from "@supabase/supabase-js";
-
-export default async function handler(req, res) {
-  try {
-    if (req.method !== "POST") {
-      return res.status(405).json({ error: "Method not allowed" });
-    }
-
-    const { email, language } = req.body;
-
-    if (!email) {
-      return res.status(400).json({ error: "Email is required" });
-    }
-
-    // Initialize Supabase
-    const supabase = createClient(
-      process.env.SUPABASE_URL,
-      process.env.SUPABASE_SERVICE_ROLE_KEY
-    );
-
-    // Generate a 6‑digit verification code
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
-
-    // Store pending registration
+    // Insert into pending_registrations (or your chosen table)
     const { data, error } = await supabase
       .from("pending_registrations")
       .insert({
         email,
-        language: language || "en",
+        language: lang || "en",
         code,
         created_at: new Date().toISOString(),
+        expires_at: expiresAt
       })
       .select()
       .single();
 
     if (error) {
-      console.error("Supabase insert error:", error);
-      return res.status(500).json({ error: "Database error" });
+      log("Supabase insert error:", JSON.stringify(error));
+      return res.status(500).json({ success: false, error: "Database error", debug });
     }
 
-    // Return structured response
+    log("Inserted pending registration for:", email);
+
+    // Optionally also insert into email_verifications table if you use it
+    // await supabase.from("email_verifications").insert({ email, code, expires_at: expiresAt });
+
+    // NOTE: Do not send SMTP credentials here. Email sending should use env vars on the server.
+    // Return success (do not return sensitive data in production)
     return res.status(200).json({
       success: true,
       next: "verify",
       email,
-      code, // for now we return it directly (same as before)
+      debug
     });
   } catch (err) {
-    console.error("Unexpected error:", err);
-    return res.status(500).json({ error: "Server error" });
+    log("Exception:", err && err.toString ? err.toString() : String(err));
+    return res.status(500).json({ success: false, error: "Server error", debug });
   }
 }
