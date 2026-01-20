@@ -3,39 +3,47 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Verification</title>
+  <title>Verify Account</title>
   <style>
-    body { margin: 0; font-family: sans-serif; background: #f5f7fa; display: flex; justify-content: center; align-items: center; min-height: 100vh; overscroll-behavior-y: auto; }
-    .card { background: white; padding: 30px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); text-align: center; width: 90%; max-width: 400px; }
-    .btn { background: #3b82f6; color: white; border: none; padding: 15px; width: 100%; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 20px; }
+    body { font-family: sans-serif; display: flex; justify-content: center; padding-top: 50px; background: #f0f2f5; }
+    .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 100%; max-width: 400px; text-align: center; }
+    .btn { background: #2ECC71; color: white; padding: 12px 24px; border-radius: 6px; text-decoration: none; display: inline-block; font-weight: bold; margin-top: 20px; border: none; cursor: pointer; }
   </style>
 </head>
 <body>
   <div class="card">
-    <h1>Verify Email</h1>
-    <p>Click below to finalize your registration.</p>
-    <button id="vBtn" class="btn">Verify Now</button>
-    <p id="msg" style="color:red; margin-top:10px;"></p>
+    <h1>Confirm Registration</h1>
+    <p>Please click the button below to verify your email address.</p>
+    <button id="verifyBtn" class="btn">Verify My Account</button>
+    <p id="error" style="color: red; display: none; margin-top: 15px;"></p>
   </div>
+
   <script>
     const params = new URLSearchParams(window.location.search);
     const email = params.get("email");
     const code = params.get("code");
 
-    document.getElementById("vBtn").onclick = async () => {
-      const btn = document.getElementById("vBtn");
+    document.getElementById("verifyBtn").onclick = async () => {
+      const btn = document.getElementById("verifyBtn");
+      const err = document.getElementById("error");
       btn.disabled = true;
+      err.style.display = "none";
+
       try {
         const res = await fetch("/api/auth/verify-register", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email, code })
         });
-        const d = await res.json();
-        if (d.success) window.location.href = "dashboard.html";
-        else throw new Error();
+        const data = await res.json();
+        if (data.success) {
+          window.location.href = "dashboard.html";
+        } else {
+          throw new Error();
+        }
       } catch (e) {
-        document.getElementById("msg").textContent = "Invalid or expired code.";
+        err.textContent = "Invalid or expired code.";
+        err.style.display = "block";
         btn.disabled = false;
       }
     };
