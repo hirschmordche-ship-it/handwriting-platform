@@ -44,35 +44,16 @@ const messages = {
 
           <p>Copy your code quickly:</p>
 
-          <a href="${BASE_URL}/copy?code=${code}"
-             style="
-               display:inline-block;
-               padding:12px 20px;
-               background:#4A90E2;
-               color:white;
-               border-radius:6px;
-               text-decoration:none;
-               font-size:16px;
-               margin-bottom:20px;
-             ">
-            Copy Code
-          </a>
+          <a style="display:inline-block;padding:12px 20px;background:#4A90E2;color:white;border-radius:6px;text-decoration:none;font-size:16px;margin-bottom:20px;">
+  ${code}
+</a>
 
           <p>Or verify instantly:</p>
 
-          <a href="${BASE_URL}/verify?email=${encodeURIComponent(email)}&code=${code}"
-             style="
-               display:inline-block;
-               padding:12px 20px;
-               background:#2ECC71;
-               color:white;
-               border-radius:6px;
-               text-decoration:none;
-               font-size:16px;
-               margin-bottom:20px;
-             ">
-            Verify My Account
-          </a>
+          <a href="${BASE_URL}/auth/verify?email=${encodeURIComponent(email)}&code=${code}"
+   style="display:inline-block;padding:12px 20px;background:#2ECC71;color:white;border-radius:6px;text-decoration:none;font-size:16px;margin-bottom:20px;">
+  Verify My Account
+</a>
 
           <p style="font-size:14px;">
             This code expires in 10 minutes.
