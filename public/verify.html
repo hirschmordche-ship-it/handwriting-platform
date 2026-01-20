@@ -147,9 +147,11 @@
 
     // Copy on tap
     codeBox.addEventListener("click", () => {
-      navigator.clipboard.writeText(codeBox.textContent);
-      toast.style.display = "block";
-      setTimeout(() => (toast.style.display = "none"), 1500);
+      if (code) {
+        navigator.clipboard.writeText(code);
+        toast.style.display = "block";
+        setTimeout(() => (toast.style.display = "none"), 1500);
+      }
     });
 
     // Verification request
@@ -175,8 +177,8 @@
             : "Verification successful — redirecting...";
 
           setTimeout(() => {
-            // FIX: Correct redirect filename to match static site structure
-            window.location.href = "dashboard.html";
+            // Redirects to upload.html to match the registration flow
+            window.location.href = "upload.html";
           }, 1200);
         } else {
           throw new Error();
