@@ -105,7 +105,9 @@ export default async function handler(req, res) {
 
     const { error: insertError } = await supabase
       .from("users")
-      .insert({ email });
+      .insert({ email 
+              password_hash: null, role: "user"
+              });
 
     if (insertError) {
       log("User insert error:", JSON.stringify(insertError));
