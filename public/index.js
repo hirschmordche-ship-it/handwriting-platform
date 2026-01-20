@@ -46,7 +46,7 @@ const i18n = {
     loginInvalid: "Please enter email and password.",
     loginError: "Login failed. Please check your details.",
     "footer.text": `Need help? Contact us <a href="contactus.html">here</a>`,
-    "terms.full": `<p><strong>1. Data Usage</strong><br>By using this platform, you agree that handwriting samples may be stored for processing.</p>`
+    "terms.full": `<p><strong>1. Data Usage</strong><br>By using this platform, you agree that handwriting samples may be stored for processing.</p><p><strong>2. Account Deletion</strong><br>Login info is removed, but uploaded images remain for research.</p>`
   },
   he: {
     "register.title": "יצירת חשבון",
@@ -68,12 +68,26 @@ const i18n = {
     "login.remember": "זכור אותי",
     "login.forgot": "שכחת סיסמה?",
     "login.submit": "התחברות",
-    strength: { tooShort: "קצר מדי", weak: "חלשה", medium: "בינונית", strong: "חזקה", complete: "הסיסמה הושלמה" },
+    "password.help": "לפחות 8 תווים, כולל מספרים וסימנים.",
+    "modal.ok": "הבנתי",
+    strength: {
+      tooShort: "קצר מדי",
+      weak: "חלשה",
+      medium: "בינונית",
+      strong: "חזקה",
+      complete: "הסיסמה הושלמה"
+    },
     show: "הצג",
     hide: "הסתר",
     forgotInfo: "איפוס הסיסמה יתבצע דרך המייל.",
+    regTermsMissing: "אנא אשר את תנאי השימוש.",
+    regPasswordMismatch: "הסיסמאות אינן תואמות.",
+    regPasswordInvalid: "הסיסמה אינה עומדת בדרישות.",
+    regStartError: "לא ניתן להתחיל הרשמה. נסה שוב.",
     regVerifyError: "קוד שגוי או שפג תוקפו. נסה שוב.",
+    regVerifyPrompt: "הזן את הקוד בן 6 הספרות שנשלח לאימייל שלך.",
     regVerifyTitle: "אימות אימייל",
+    loginInvalid: "אנא הזן אימייל וסיסמה.",
     loginError: "ההתחברות נכשלה. בדוק את הפרטים שלך.",
     "footer.text": `צריך עזרה? צרו קשר <a href="contactus.html">כאן</a>`,
     "terms.full": `<p><strong>1. שימוש בנתונים</strong><br>העלאת דוגמאות כתב יד מהווה הסכמה לעיבודן.</p>`
@@ -81,24 +95,63 @@ const i18n = {
 };
 
 // DOM references
+const body = document.body;
+const tabRegister = document.getElementById("tabRegister");
+const tabLogin = document.getElementById("tabLogin");
 const registerForm = document.getElementById("registerForm");
 const loginForm = document.getElementById("loginForm");
+const langToggle = document.getElementById("langToggle");
+const modeToggle = document.getElementById("modeToggle");
+
 const regPassword = document.getElementById("regPassword");
 const regConfirmPassword = document.getElementById("regConfirmPassword");
+const loginPassword = document.getElementById("loginPassword");
+const regStrengthBar = document.getElementById("regStrengthBar");
+const regStrengthLabel = document.getElementById("regStrengthLabel");
+const regMessages = document.getElementById("regMessages");
+const loginMessages = document.getElementById("loginMessages");
 const regTerms = document.getElementById("regTerms");
 const regEmail = document.getElementById("regEmail");
-const registerButton = document.getElementById("registerButton");
+const loginEmail = document.getElementById("loginEmail");
+const rememberMe = document.getElementById("rememberMe");
 
 const modalBackdrop = document.getElementById("modalBackdrop");
 const termsBackdrop = document.getElementById("termsBackdrop");
-const verifyBackdrop = document.getElementById("verifyBackdrop");
+const openTerms = document.getElementById("openTerms");
 
+const verifyBackdrop = document.getElementById("verifyBackdrop");
+const verifyClose = document.getElementById("verifyClose");
+const verifyTitle = document.getElementById("verifyTitle");
+const verifyMessage = document.getElementById("verifyMessage");
 const verifyCodeInput = document.getElementById("verifyCodeInput");
 const verifySubmit = document.getElementById("verifySubmit");
 const verifyMessages = document.getElementById("verifyMessages");
 
-// --- Logic ---
+// Modal Close logic
+[modalBackdrop, termsBackdrop, verifyBackdrop].forEach(m => {
+  m.addEventListener("click", (e) => { if(e.target === m) m.hidden = true; });
+});
 
+// Terms logic
+openTerms.addEventListener("click", (e) => {
+  e.preventDefault();
+  const dict = i18n[currentLang];
+  document.getElementById("termsText").innerHTML = dict["terms.full"];
+  termsBackdrop.hidden = false;
+});
+
+// Verification Modal Helper
+function openVerifyModal(email) {
+  const dict = i18n[currentLang];
+  pendingRegisterEmail = email; 
+  verifyTitle.textContent = dict.regVerifyTitle;
+  verifyMessage.textContent = dict.regVerifyPrompt;
+  verifyCodeInput.value = "";
+  verifyMessages.textContent = "";
+  verifyBackdrop.hidden = false;
+}
+
+// Password Strength Logic
 function evaluatePassword(password) {
   const hasNum = /\d/.test(password);
   const hasSym = /[^A-Za-z0-9]/.test(password);
@@ -108,6 +161,14 @@ function evaluatePassword(password) {
   return { valid: score >= 100, score };
 }
 
+function updateStrengthUI(pw) {
+  const res = evaluatePassword(pw);
+  regStrengthBar.style.width = res.score + "%";
+  regStrengthBar.style.background = res.valid ? "var(--success)" : "var(--danger)";
+  regStrengthLabel.textContent = i18n[currentLang].strength[res.valid ? "complete" : "weak"];
+}
+
+// Strict Button Locking
 function updateRegisterButtonState() {
   const emailVal = regEmail.value.trim();
   const passVal = regPassword.value;
@@ -120,48 +181,57 @@ function updateRegisterButtonState() {
     passVal === confVal && 
     regTerms.checked;
 
-  registerButton.classList.toggle("enabled", isValid);
+  const btn = document.getElementById("registerButton");
+  if (isValid) {
+    btn.classList.add("enabled");
+  } else {
+    btn.classList.remove("enabled");
+  }
 }
 
-// Event Listeners for Validation
-[regEmail, regPassword, regConfirmPassword, regTerms].forEach(el => {
-  el.addEventListener("input", updateRegisterButtonState);
-  el.addEventListener("change", updateRegisterButtonState);
+// Listeners
+regEmail.addEventListener("input", updateRegisterButtonState);
+regPassword.addEventListener("input", (e) => { 
+  updateStrengthUI(e.target.value); 
+  updateRegisterButtonState(); 
 });
+regConfirmPassword.addEventListener("input", updateRegisterButtonState);
+regTerms.addEventListener("change", updateRegisterButtonState);
 
-// Register Submission
+// Flow: Register button click triggers email code, THEN opens modal
 registerForm.addEventListener("submit", async (e) => {
   e.preventDefault();
-  if (!registerButton.classList.contains("enabled")) return;
+  const btn = document.getElementById("registerButton");
+  if (!btn.classList.contains("enabled")) return;
 
   const email = regEmail.value.trim();
   const password = regPassword.value;
 
   try {
-    registerButton.disabled = true;
+    btn.disabled = true;
     const res = await fetch("/api/auth/start-register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password, lang: currentLang })
     });
+    if (!res.ok) throw new Error();
     
-    if (res.ok) {
-      pendingRegisterEmail = email; // Capture for verification step
-      verifyBackdrop.hidden = false; // Open Modal ONLY NOW
-    } else {
-      throw new Error();
-    }
+    // Success: capture email and open modal
+    openVerifyModal(email); 
   } catch (err) {
-    document.getElementById("regMessages").textContent = i18n[currentLang].regStartError;
+    regMessages.textContent = i18n[currentLang].regStartError;
   } finally {
-    registerButton.disabled = false;
+    btn.disabled = false;
   }
 });
 
-// Verification Submission
+// Flow: Verify code inside modal
 verifySubmit.addEventListener("click", async () => {
   const code = verifyCodeInput.value.trim();
-  if (!code || !pendingRegisterEmail) return;
+  if (!code || !pendingRegisterEmail) {
+    verifyMessages.textContent = i18n[currentLang].regVerifyError;
+    return;
+  }
 
   try {
     verifySubmit.disabled = true;
@@ -183,13 +253,24 @@ verifySubmit.addEventListener("click", async () => {
   }
 });
 
-// Initialization
+// Mode / Lang Helpers
+function setMode(mode) {
+  body.classList.remove("light-mode", "dark-mode");
+  body.classList.add(mode === "dark" ? "dark-mode" : "light-mode");
+  localStorage.setItem("themeMode", mode);
+}
+function setLanguage(lang) {
+  currentLang = lang;
+  body.classList.remove("ltr", "rtl");
+  body.classList.add(lang === "he" ? "rtl" : "ltr");
+  localStorage.setItem("authLang", lang);
+  // Update texts based on dictionary...
+}
+
 function init() {
-  // Ensure everything is hidden on load
   modalBackdrop.hidden = true;
   termsBackdrop.hidden = true;
   verifyBackdrop.hidden = true;
-  
   updateRegisterButtonState();
 }
 document.addEventListener("DOMContentLoaded", init);
