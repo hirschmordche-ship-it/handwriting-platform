@@ -4,100 +4,22 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Verify Account</title>
-
   <style>
-    body {
-      margin: 0;
-      padding: 0;
-      font-family: Arial, sans-serif;
-      background: #f5f7fa;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-    }
-
-    .card {
-      background: white;
-      width: 90%;
-      max-width: 420px;
-      padding: 28px;
-      border-radius: 14px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-      text-align: center;
-    }
-
-    h1 {
-      margin-top: 0;
-      font-size: 24px;
-      color: #4A90E2;
-    }
-
-    p {
-      font-size: 16px;
-      color: #444;
-      margin-bottom: 18px;
-    }
-
-    .code-box {
-      display: inline-block;
-      padding: 16px 26px;
-      background: #4A90E2;
-      color: white;
-      border-radius: 10px;
-      font-size: 32px;
-      letter-spacing: 4px;
-      cursor: pointer;
-      user-select: all;
-      margin: 22px 0;
-    }
-
-    .btn {
-      display: block;
-      width: fit-content;
-      margin: 10px auto 20px auto;
-      padding: 10px 16px;
-      background: #2ECC71;
-      color: white;
-      border-radius: 6px;
-      text-decoration: none;
-      font-size: 14px;
-    }
-
-    .toast {
-      margin-top: 12px;
-      font-size: 14px;
-      color: #2ECC71;
-      display: none;
-    }
-
-    .error {
-      margin-top: 12px;
-      font-size: 14px;
-      color: #E74C3C;
-      display: none;
-    }
-
-    .rtl {
-      direction: rtl;
-      text-align: right;
-    }
+    body { margin: 0; font-family: sans-serif; background: #f5f7fa; display: flex; justify-content: center; align-items: center; min-height: 100vh; overscroll-behavior-y: auto; }
+    .card { background: white; width: 90%; max-width: 400px; padding: 30px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); text-align: center; }
+    h1 { color: #3b82f6; }
+    .code-box { display: block; padding: 20px; background: #eff6ff; color: #1d4ed8; border-radius: 12px; font-size: 2rem; font-weight: 700; margin: 20px 0; letter-spacing: 0.2em; }
+    .btn { display: block; width: 100%; padding: 15px; background: #3b82f6; color: white; border: none; border-radius: 10px; font-weight: 700; cursor: pointer; text-decoration: none; }
+    .error { color: #ef4444; margin-top: 15px; display: none; }
   </style>
 </head>
-
 <body>
-  <div class="card" id="container">
-    <h1 id="title">Thank you for joining us</h1>
-    <p id="subtitle">
-      Your verification code is shown below. Tap it to copy, then paste it into your browser.
-    </p>
-
-    <div id="codeBox" class="code-box">000000</div>
-
-    <a id="verifyBtn" class="btn">Verify My Account</a>
-
-    <div id="toast" class="toast">Copied!</div>
-    <div id="error" class="error"></div>
+  <div class="card">
+    <h1 id="title">Verify Email</h1>
+    <p id="subtitle">Click the button below to complete your registration.</p>
+    <div id="codeDisplay" class="code-box">------</div>
+    <button id="verifyBtn" class="btn">Verify Now</button>
+    <div id="errorBox" class="error"></div>
   </div>
 
   <script>
@@ -106,79 +28,31 @@
     const code = params.get("code");
     const lang = params.get("lang") || "en";
 
-    const title = document.getElementById("title");
-    const subtitle = document.getElementById("subtitle");
-    const codeBox = document.getElementById("codeBox");
-    const verifyBtn = document.getElementById("verifyBtn");
-    const toast = document.getElementById("toast");
-    const errorBox = document.getElementById("error");
-    const container = document.getElementById("container");
+    if (code) document.getElementById("codeDisplay").textContent = code;
 
-    // Insert code
-    if (code) codeBox.textContent = code;
-
-    // Language handling
-    if (lang === "he") {
-      container.classList.add("rtl");
-      title.textContent = "תודה שנרשמת אלינו";
-      subtitle.textContent = "קוד האימות שלך מופיע למטה. ניתן ללחוץ עליו כדי להעתיק אותו ולהדביק בדפדפן.";
-      verifyBtn.textContent = "אמת את החשבון שלי";
-      toast.textContent = "הועתק!";
-    }
-
-    // Missing params fallback
-    if (!email || !code) {
-      errorBox.style.display = "block";
-      errorBox.textContent = lang === "he"
-        ? "הקישור לא תקין — חסר מידע."
-        : "Invalid link — missing information.";
-      verifyBtn.style.display = "none";
-      codeBox.style.display = "none";
-      subtitle.style.display = "none";
-      return;
-    }
-
-    // Copy on tap
-    codeBox.addEventListener("click", () => {
-      navigator.clipboard.writeText(code);
-      toast.style.display = "block";
-      setTimeout(() => (toast.style.display = "none"), 1500);
-    });
-
-    // Verification request
-    verifyBtn.addEventListener("click", async () => {
-      errorBox.style.display = "none";
-      verifyBtn.textContent = lang === "he" ? "מאמת..." : "Verifying...";
+    document.getElementById("verifyBtn").addEventListener("click", async () => {
+      const btn = document.getElementById("verifyBtn");
+      const err = document.getElementById("errorBox");
+      btn.disabled = true;
+      btn.textContent = "Verifying...";
 
       try {
         const res = await fetch("/api/auth/verify-register", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, code }),
+          body: JSON.stringify({ email, code })
         });
-
         const data = await res.json();
-
         if (data.success) {
-          verifyBtn.textContent = lang === "he"
-            ? "האימות הצליח — מעביר אותך..."
-            : "Verification successful — redirecting...";
-
-          setTimeout(() => {
-            window.location.href = "/dashboard";
-          }, 1200);
+          window.location.href = "dashboard.html";
         } else {
           throw new Error();
         }
-      } catch (err) {
-        errorBox.style.display = "block";
-        errorBox.textContent = lang === "he"
-          ? "קוד לא תקין או שפג תוקפו."
-          : "Invalid or expired code.";
-
-        verifyBtn.textContent = lang === "he"
-          ? "אמת את החשבון שלי"
-          : "Verify My Account";
+      } catch (e) {
+        err.style.display = "block";
+        err.textContent = "Invalid or expired code.";
+        btn.disabled = false;
+        btn.textContent = "Verify Now";
       }
     });
   </script>
