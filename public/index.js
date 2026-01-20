@@ -175,6 +175,7 @@ const termsOk = document.getElementById("termsOk");
 const termsText = document.getElementById("termsText");
 const openTerms = document.getElementById("openTerms");
 
+// Verification modal
 const verifyBackdrop = document.getElementById("verifyBackdrop");
 const verifyClose = document.getElementById("verifyClose");
 const verifyTitle = document.getElementById("verifyTitle");
@@ -190,10 +191,15 @@ function openModal(title, message) {
   modalBackdrop.hidden = false;
 }
 
-function closeModal() { modalBackdrop.hidden = true; }
+function closeModal() {
+  modalBackdrop.hidden = true;
+}
+
 modalClose.addEventListener("click", closeModal);
 modalOk.addEventListener("click", closeModal);
-modalBackdrop.addEventListener("click", (e) => { if (e.target === modalBackdrop) closeModal(); });
+modalBackdrop.addEventListener("click", (e) => {
+  if (e.target === modalBackdrop) closeModal();
+});
 
 // Terms modal
 openTerms.addEventListener("click", () => {
@@ -201,12 +207,17 @@ openTerms.addEventListener("click", () => {
   termsText.innerHTML = dict["terms.full"];
   termsBackdrop.hidden = false;
 });
-function closeTerms() { termsBackdrop.hidden = true; }
+
+function closeTerms() {
+  termsBackdrop.hidden = true;
+}
 termsClose.addEventListener("click", closeTerms);
 termsOk.addEventListener("click", closeTerms);
-termsBackdrop.addEventListener("click", (e) => { if (e.target === termsBackdrop) closeTerms(); });
+termsBackdrop.addEventListener("click", (e) => {
+  if (e.target === termsBackdrop) closeTerms();
+});
 
-// Verification modal
+// Verification modal helpers
 function openVerifyModal(email) {
   const dict = i18n[currentLang];
   pendingRegisterEmail = email;
@@ -217,9 +228,15 @@ function openVerifyModal(email) {
   verifyBackdrop.hidden = false;
   verifyCodeInput.focus();
 }
-function closeVerifyModal() { verifyBackdrop.hidden = true; pendingRegisterEmail = ""; }
+
+function closeVerifyModal() {
+  verifyBackdrop.hidden = true;
+  pendingRegisterEmail = "";
+}
 verifyClose.addEventListener("click", closeVerifyModal);
-verifyBackdrop.addEventListener("click", (e) => { if (e.target === verifyBackdrop) closeVerifyModal(); });
+verifyBackdrop.addEventListener("click", (e) => {
+  if (e.target === verifyBackdrop) closeVerifyModal();
+});
 
 // Tabs
 function setActiveTab(tab) {
@@ -238,131 +255,273 @@ function setActiveTab(tab) {
 tabRegister.addEventListener("click", () => setActiveTab("register"));
 tabLogin.addEventListener("click", () => setActiveTab("login"));
 
-// Theme/Lang Logic
+// Theme Toggle
 function setMode(mode) {
-  body.classList.remove("light-mode", "dark-mode");
   if (mode === "dark") {
     body.classList.add("dark-mode");
+    body.classList.remove("light-mode");
     modeToggle.classList.add("dark-active");
-    if (modeIcon) modeIcon.textContent = "🌙";
+    modeIcon.textContent = "🌙";
+    localStorage.setItem("themeMode", "dark");
   } else {
     body.classList.add("light-mode");
+    body.classList.remove("dark-mode");
     modeToggle.classList.remove("dark-active");
-    if (modeIcon) modeIcon.textContent = "☀️";
+    modeIcon.textContent = "☀️";
+    localStorage.setItem("themeMode", "light");
   }
-  localStorage.setItem("themeMode", mode);
 }
-modeToggle.addEventListener("click", () => setMode(body.classList.contains("dark-mode") ? "light" : "dark"));
+modeToggle.addEventListener("click", () => {
+  const isDark = body.classList.contains("dark-mode");
+  setMode(isDark ? "light" : "dark");
+});
 
+// Language Toggle
 function setLanguage(lang) {
   currentLang = lang;
-  body.classList.remove("ltr", "rtl");
-  body.classList.add(lang === "he" ? "rtl" : "ltr");
-  document.documentElement.lang = lang;
-  langToggle.className = `lang-toggle-pill lang-${lang}`;
-  
-  const dict = i18n[lang];
-  document.querySelectorAll("[data-i18n]").forEach(el => {
-    const key = el.getAttribute("data-i18n");
-    if (dict[key]) el.textContent = dict[key];
-  });
-  document.querySelectorAll("[data-i18n-placeholder]").forEach(el => {
-    const key = el.getAttribute("data-i18n-placeholder");
-    if (dict[key]) el.placeholder = dict[key];
-  });
-  const footer = document.getElementById("footerText");
-  if (footer) footer.innerHTML = dict["footer.text"];
   localStorage.setItem("authLang", lang);
-}
-langToggle.addEventListener("click", () => setLanguage(currentLang === "en" ? "he" : "en"));
+  const dict = i18n[lang];
 
-// Password Strength
-function evaluatePassword(password) {
-  const minLength = 8;
-  const hasNumber = /\d/.test(password);
-  const hasSymbol = /[^A-Za-z0-9\u0590-\u05FF]/.test(password);
-  const hasUppercase = /[A-Z]/.test(password);
-  let score = (Math.min(password.length, minLength) / minLength) * 50;
-  if (hasNumber) score += 20;
-  if (hasSymbol) score += 20;
-  if (hasUppercase) score += 10;
-  return { valid: score >= 100, score: Math.min(score, 100) };
+  // Update classes
+  body.className = body.className.replace(/ltr|rtl/g, "").trim();
+  body.classList.add(lang === "he" ? "rtl" : "ltr");
+  langToggle.className = "lang-toggle-pill " + (lang === "he" ? "lang-he" : "lang-en");
+
+  // Labels
+  document.getElementById("regTitle").textContent = dict["register.title"];
+  document.getElementById("regEmailLabel").textContent = dict["register.emailLabel"];
+  regEmail.placeholder = dict["register.emailPlaceholder"];
+  document.getElementById("regPasswordLabel").textContent = dict["register.passwordLabel"];
+  regPassword.placeholder = dict["register.passwordPlaceholder"];
+  document.getElementById("regConfirmLabel").textContent = dict["register.confirmLabel"];
+  regConfirmPassword.placeholder = dict["register.confirmPlaceholder"];
+  document.getElementById("termsTextBefore").textContent = dict["register.terms.before"];
+  openTerms.textContent = dict["register.terms.word"];
+  document.getElementById("termsTextAfter").textContent = dict["register.terms.after"];
+  document.getElementById("registerButton").textContent = dict["register.submit"];
+
+  document.getElementById("loginTitle").textContent = dict["login.title"];
+  document.getElementById("loginEmailLabel").textContent = dict["login.emailLabel"];
+  loginEmail.placeholder = dict["login.emailPlaceholder"];
+  document.getElementById("loginPasswordLabel").textContent = dict["login.passwordLabel"];
+  loginPassword.placeholder = dict["login.passwordPlaceholder"];
+  document.getElementById("rememberLabel").textContent = dict["login.remember"];
+  document.getElementById("forgotPassword").textContent = dict["login.forgot"];
+  document.getElementById("loginButton").textContent = dict["login.submit"];
+
+  tabRegister.textContent = dict["register.submit"];
+  tabLogin.textContent = dict["login.submit"];
+
+  document.getElementById("regHelp").textContent = dict["password.help"];
+  document.getElementById("loginHelp").textContent = dict["password.help"];
+  modalOk.textContent = dict["modal.ok"];
+  termsOk.textContent = dict["modal.ok"];
+  verifySubmit.textContent = dict["modal.ok"]; // Fallback if no specific verify btn text
+
+  document.getElementById("footerText").innerHTML = dict["footer.text"];
+
+  // Reset messages
+  regMessages.textContent = "";
+  loginMessages.textContent = "";
+  updateStrengthUI(regPassword.value);
+}
+langToggle.addEventListener("click", () => {
+  setLanguage(currentLang === "en" ? "he" : "en");
+});
+
+// Password validation
+function getPasswordStrength(p) {
+  if (!p) return 0;
+  if (p.length < 8) return 1;
+  let s = 0;
+  if (/[a-z]/.test(p)) s++;
+  if (/[A-Z]/.test(p)) s++;
+  if (/[0-9]/.test(p)) s++;
+  if (/[^a-zA-Z0-9]/.test(p)) s++;
+  if (p.length >= 10) s++;
+  return Math.min(s, 4);
 }
 
-function updateStrengthUI(password) {
-  const result = evaluatePassword(password);
-  regStrengthBar.style.width = result.score + "%";
-  regStrengthBar.style.background = result.valid ? "var(--success)" : "var(--danger)";
-  regStrengthLabel.textContent = i18n[currentLang].strength[result.valid ? "complete" : "weak"];
+function updateStrengthUI(p) {
+  const dict = i18n[currentLang];
+  const s = getPasswordStrength(p);
+  const colors = ["#ff4d67", "#ff4d67", "#f6c453", "#4ade80", "#22c55e"];
+  const labels = [
+    "",
+    dict.strength.tooShort,
+    dict.strength.weak,
+    dict.strength.medium,
+    dict.strength.strong
+  ];
+
+  regStrengthBar.style.width = (s / 4) * 100 + "%";
+  regStrengthBar.style.background = colors[s];
+  regStrengthLabel.textContent = labels[s];
+  regStrengthLabel.style.color = colors[s];
 }
 
 function updateRegisterButtonState() {
+  const p1 = regPassword.value;
+  const p2 = regConfirmPassword.value;
+  const email = regEmail.value.trim();
+  const terms = regTerms.checked;
+  const strength = getPasswordStrength(p1);
+
+  const isValid = email.includes("@") && strength >= 3 && p1 === p2 && terms;
   const btn = document.getElementById("registerButton");
-  const isValid = evaluatePassword(regPassword.value).valid && 
-                  regPassword.value === regConfirmPassword.value && 
-                  regTerms.checked;
-  isValid ? btn.classList.add("enabled") : btn.classList.remove("enabled");
+  if (isValid) {
+    btn.classList.add("enabled");
+  } else {
+    btn.classList.remove("enabled");
+  }
 }
 
-regPassword.addEventListener("input", (e) => { updateStrengthUI(e.target.value); updateRegisterButtonState(); });
-regConfirmPassword.addEventListener("input", updateRegisterButtonState);
-regTerms.addEventListener("change", updateRegisterButtonState);
+[regPassword, regConfirmPassword, regEmail, regTerms].forEach((el) => {
+  el.addEventListener("input", () => {
+    if (el === regPassword) updateStrengthUI(el.value);
+    updateRegisterButtonState();
+  });
+});
 
-// FLOW FIXES
+// Password visibility
+function setupPasswordToggle(toggleId, inputId) {
+  const toggle = document.getElementById(toggleId);
+  const input = document.getElementById(inputId);
+  toggle.addEventListener("click", () => {
+    const isShowing = input.type === "text";
+    input.type = isShowing ? "password" : "text";
+    toggle.textContent = isShowing ? i18n[currentLang].show : i18n[currentLang].hide;
+  });
+}
+
+// REGISTER FLOW (Fix Modal Timing)
 registerForm.addEventListener("submit", async (e) => {
   e.preventDefault();
   const btn = document.getElementById("registerButton");
   if (!btn.classList.contains("enabled")) return;
+
+  const email = regEmail.value.trim();
+  const password = regPassword.value;
+
   try {
     btn.disabled = true;
     const res = await fetch("/api/auth/start-register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: regEmail.value.trim(), password: regPassword.value, lang: currentLang })
+      body: JSON.stringify({ email, password, lang: currentLang })
     });
-    if (!res.ok) throw new Error();
-    openVerifyModal(regEmail.value.trim()); // FIXED: Only opens on success
+    
+    if (res.ok) {
+      // ONLY OPEN MODAL IF SERVER SENDS SUCCESS
+      openVerifyModal(email); 
+    } else {
+      throw new Error();
+    }
   } catch (err) {
     regMessages.textContent = i18n[currentLang].regStartError;
-  } finally { btn.disabled = false; }
+  } finally {
+    btn.disabled = false;
+  }
 });
 
+// VERIFICATION SUBMIT
 verifySubmit.addEventListener("click", async () => {
+  const code = verifyCodeInput.value.trim();
+  if (!code || !pendingRegisterEmail) return;
+
   try {
     verifySubmit.disabled = true;
     const res = await fetch("/api/auth/verify-register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: pendingRegisterEmail, code: verifyCodeInput.value.trim() })
+      body: JSON.stringify({ email: pendingRegisterEmail, code })
     });
     const data = await res.json();
-    if (data.success) window.location.href = "upload.html";
-    else throw new Error();
-  } catch (err) { verifyMessages.textContent = i18n[currentLang].regVerifyError; }
-  finally { verifySubmit.disabled = false; }
+    
+    if (data.success) {
+      window.location.href = "dashboard.html";
+    } else {
+      verifyMessages.textContent = i18n[currentLang].regVerifyError;
+    }
+  } catch (err) {
+    verifyMessages.textContent = i18n[currentLang].regVerifyError;
+  } finally {
+    verifySubmit.disabled = false;
+  }
 });
 
+// LOGIN FLOW
 loginForm.addEventListener("submit", async (e) => {
   e.preventDefault();
+  const dict = i18n[currentLang];
+  const email = loginEmail.value.trim();
+  const password = loginPassword.value;
+
+  if (!email || !password) {
+    loginMessages.textContent = dict.loginInvalid;
+    return;
+  }
+
   try {
     const res = await fetch("/api/auth/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: loginEmail.value.trim(), password: loginPassword.value })
+      body: JSON.stringify({ email, password })
     });
     const data = await res.json();
-    if (data.success) window.location.href = "dashboard.html";
-    else throw new Error();
-  } catch (err) { loginMessages.textContent = i18n[currentLang].loginError; }
+    
+    if (!data.success) {
+      loginMessages.textContent = dict.loginError;
+      return;
+    }
+
+    if (rememberMe.checked) {
+      localStorage.setItem("rememberedEmail", email);
+    } else {
+      localStorage.removeItem("rememberedEmail");
+    }
+
+    window.location.href = "dashboard.html";
+  } catch (err) {
+    console.error(err);
+    loginMessages.textContent = dict.loginError;
+  }
 });
 
+// Forgot password
+const forgotPasswordBtn = document.getElementById("forgotPassword");
+forgotPasswordBtn.addEventListener("click", () => {
+  const dict = i18n[currentLang];
+  openModal(dict["login.forgot"], dict.forgotInfo);
+});
+
+// Init
 function init() {
+  // Reset Modals
   modalBackdrop.hidden = true;
   termsBackdrop.hidden = true;
   verifyBackdrop.hidden = true;
-  setMode(localStorage.getItem("themeMode") || "light");
-  setLanguage(localStorage.getItem("authLang") || "en");
+
+  const savedTheme = localStorage.getItem("themeMode");
+  setMode(savedTheme === "dark" ? "dark" : "light");
+
+  const savedLang = localStorage.getItem("authLang");
+  setLanguage(savedLang === "he" ? "he" : "en");
+
+  const rememberedEmail = localStorage.getItem("rememberedEmail");
+  if (rememberedEmail) {
+    loginEmail.value = rememberedEmail;
+    setActiveTab("login");
+  } else {
+    setActiveTab("register");
+  }
+
+  updateStrengthUI("");
   updateRegisterButtonState();
 }
+
 document.addEventListener("DOMContentLoaded", init);
 
+setupPasswordToggle("regPasswordToggle", "regPassword");
+setupPasswordToggle("regConfirmPasswordToggle", "regConfirmPassword");
+setupPasswordToggle("loginPasswordToggle", "loginPassword");
