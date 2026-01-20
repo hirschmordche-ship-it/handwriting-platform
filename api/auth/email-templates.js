@@ -50,7 +50,7 @@ const messages = {
           </div>
 
           <!-- VERIFY BUTTON -->
-          <a href="${BASE_URL}/auth/verify?email=${encodeURIComponent(email)}&code=${code}"
+          <a href="${BASE_URL}/verify?email=${encodeURIComponent(email)}&code=${code}"
              style="
                display:inline-block;
                padding:12px 20px;
@@ -126,7 +126,7 @@ const messages = {
           </div>
 
           <!-- VERIFY BUTTON -->
-          <a href="${BASE_URL}/auth/verify?email=${encodeURIComponent(email)}&code=${code}"
+          <a href="${BASE_URL}/verify?email=${encodeURIComponent(email)}&code=${code}"
              style="
                display:inline-block;
                padding:12px 20px;
@@ -155,3 +155,4 @@ const messages = {
 };
 
 export default messages;
+
