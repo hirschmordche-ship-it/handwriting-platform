@@ -539,13 +539,11 @@ body.dark-mode .primary-button {
 /* Register button fade / enable */
 #registerButton {
   opacity: 0.4;
-  pointer-events: none;
   transition: opacity 0.35s ease, transform 0.25s ease;
 }
 
 #registerButton.enabled {
   opacity: 1;
-  pointer-events: auto;
   transform: translateY(-2px);
 }
 
