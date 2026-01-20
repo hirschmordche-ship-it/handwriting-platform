@@ -25,16 +25,21 @@ export default async function handler(req, res) {
       process.env.SUPABASE_SERVICE_ROLE_KEY
     );
 
-    // 1. Reject if user already exists
-    const { data: existingUser } = await supabase
+    // ------------------------------------------------------------
+    // 1. Check if user already exists
+    // ------------------------------------------------------------
+    const { data: existingUser, error: existingError } = await supabase
       .from("users")
       .select("id")
       .eq("email", email)
       .maybeSingle();
 
-    if (existingError) { log("Existing user lookup error:", JSON.stringify(existingError)); }
+    if (existingError) {
+      log("Existing user lookup error:", JSON.stringify(existingError));
+    }
 
     if (existingUser) {
+      log("User already exists");
       return res.status(400).json({
         success: false,
         error: "This email is already registered.",
@@ -42,18 +47,26 @@ export default async function handler(req, res) {
       });
     }
 
-    // 2. Cooldown: reject if code sent within last 3 minutes
+    log("CHECKPOINT A: passed existing user check");
+
+    // ------------------------------------------------------------
+    // 2. Cooldown check (3 minutes)
+    // ------------------------------------------------------------
     const threeMinutesAgo = new Date(Date.now() - 3 * 60 * 1000).toISOString();
 
-    const { data: recent } = await supabase
+    const { data: recent, error: recentError } = await supabase
       .from("pending_registrations")
-      .select("*")
+      .select("id")
       .eq("email", email)
       .gt("created_at", threeMinutesAgo)
-      .eq("used", false)
-      .limit(1);
+      .eq("used", false);
+
+    if (recentError) {
+      log("Cooldown lookup error:", JSON.stringify(recentError));
+    }
 
     if (recent && recent.length > 0) {
+      log("Cooldown triggered");
       return res.status(429).json({
         success: false,
         error: "Please wait 3 minutes before requesting another code.",
@@ -61,12 +74,18 @@ export default async function handler(req, res) {
       });
     }
 
+    log("CHECKPOINT B: passed cooldown check");
+
+    // ------------------------------------------------------------
     // 3. Generate code
+    // ------------------------------------------------------------
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
 
+    // ------------------------------------------------------------
     // 4. Insert pending registration
-    const insert = await supabase
+    // ------------------------------------------------------------
+    const { data: inserted, error: insertError } = await supabase
       .from("pending_registrations")
       .insert({
         email,
@@ -77,16 +96,18 @@ export default async function handler(req, res) {
         used: false
       })
       .select()
-      .single();
+      .maybeSingle();
 
-    if (insert.error) {
-      log("Supabase insert error:", JSON.stringify(insert.error));
+    if (insertError) {
+      log("Supabase insert error:", JSON.stringify(insertError));
       return res.status(500).json({ success: false, error: "Database error", debug });
     }
 
-    log("Inserted pending registration for:", email);
+    log("CHECKPOINT C: insert succeeded");
 
+    // ------------------------------------------------------------
     // 5. Send email
+    // ------------------------------------------------------------
     const resend = new Resend(process.env.RESEND_API_KEY);
     const msg = messages[lang] || messages.en;
 
