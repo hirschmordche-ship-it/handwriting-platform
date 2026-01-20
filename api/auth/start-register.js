@@ -1,3 +1,7 @@
+export const config = {
+  runtime: "nodejs"
+};
+
 import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
 import messages from "./email-templates.js";
@@ -19,7 +23,6 @@ export default async function handler(req, res) {
       process.env.SUPABASE_SERVICE_ROLE_KEY
     );
 
-    // 1. Check if user already exists
     const { data: existingUser } = await supabase
       .from("users")
       .select("id")
@@ -33,7 +36,6 @@ export default async function handler(req, res) {
       });
     }
 
-    // 2. Cooldown check (3 minutes)
     const threeMinutesAgo = new Date(Date.now() - 3 * 60 * 1000).toISOString();
 
     const { data: recent } = await supabase
@@ -50,11 +52,9 @@ export default async function handler(req, res) {
       });
     }
 
-    // 3. Generate code
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
 
-    // 4. Insert pending registration
     const { error: insertError } = await supabase
       .from("pending_registrations")
       .insert({
@@ -70,7 +70,6 @@ export default async function handler(req, res) {
       return res.status(500).json({ success: false, error: "Database error" });
     }
 
-    // 5. Send email
     const resend = new Resend(process.env.RESEND_API_KEY);
     const msg = messages[lang] || messages.en;
 
@@ -95,3 +94,4 @@ export default async function handler(req, res) {
     return res.status(500).json({ success: false, error: "Server error" });
   }
 }
+
