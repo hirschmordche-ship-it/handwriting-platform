@@ -1,41 +1,47 @@
+:root {
+  --danger: #ff4d67;
+  --success: #4ade80;
+  --radius-lg: 24px;
+}
+
 html, body {
   margin: 0;
   padding: 0;
   width: 100%;
   min-height: 100%;
-  /* Fix: Enables mobile pull-to-refresh */
+  /* Fix: enable swipe down gestures */
   overscroll-behavior-y: auto !important; 
   overflow-x: hidden;
-  font-family: 'Inter', sans-serif;
 }
 
-/* Ensure the background doesn't eat scroll events */
+/* Fix: Background shouldn't block touch events */
 .background {
   position: fixed;
   inset: 0;
   z-index: -1;
-  pointer-events: none; 
+  pointer-events: none;
 }
 
+/* Locked Button State */
 #registerButton {
   opacity: 0.4;
-  pointer-events: none; /* Locked by default */
-  transition: opacity 0.3s;
-  cursor: default;
+  pointer-events: none;
+  cursor: not-allowed;
+  transition: opacity 0.3s ease;
 }
 
+/* Unlocked Button State */
 #registerButton.enabled {
   opacity: 1;
-  pointer-events: auto; /* Unlocked when valid */
+  pointer-events: auto;
   cursor: pointer;
 }
 
-/* Standard Modal Styles */
 .modal-backdrop {
   position: fixed;
   inset: 0;
   background: rgba(0,0,0,0.6);
-  backdrop-filter: blur(4px);
+  backdrop-filter: blur(5px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -43,7 +49,16 @@ html, body {
 }
 
 .modal-backdrop[hidden] {
-  display: none;
+  display: none !important;
 }
 
-/* Rest of your existing glass and form styles... */
+/* Verify Modal Input Styling */
+.verify-code-input {
+  width: 100%;
+  text-align: center;
+  letter-spacing: 0.3em;
+  font-size: 1.5rem;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+}
