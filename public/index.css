@@ -1,15 +1,18 @@
+/* Your Original Glass Theme + Mobile Fixes */
 :root {
-  --danger: #ff4d67;
+  --glass-bg: rgba(255, 255, 255, 0.18);
+  --glass-border: rgba(255, 255, 255, 0.7);
+  --shadow-soft: 0 24px 48px rgba(15, 23, 42, 0.35);
   --success: #4ade80;
-  --radius-lg: 24px;
+  --danger: #ff4d67;
 }
 
 html, body {
   margin: 0;
   padding: 0;
   width: 100%;
-  min-height: 100%;
-  /* Fix: enable swipe down gestures */
+  min-height: 100vh;
+  /* Fix: Enable mobile swipe-down gestures */
   overscroll-behavior-y: auto !important; 
   overflow-x: hidden;
 }
@@ -20,28 +23,38 @@ html, body {
   inset: 0;
   z-index: -1;
   pointer-events: none;
+  background: radial-gradient(circle at top, #ffffff40, #dfe9f370);
 }
 
-/* Locked Button State */
+.glass {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(20px) saturate(150%);
+  -webkit-backdrop-filter: blur(20px) saturate(150%);
+  box-shadow: var(--shadow-soft);
+  border-radius: 24px;
+}
+
+/* Strict Button State */
 #registerButton {
   opacity: 0.4;
-  pointer-events: none;
+  pointer-events: none; /* Locked */
   cursor: not-allowed;
-  transition: opacity 0.3s ease;
+  transition: all 0.3s ease;
 }
 
-/* Unlocked Button State */
 #registerButton.enabled {
   opacity: 1;
-  pointer-events: auto;
+  pointer-events: auto; /* Unlocked */
   cursor: pointer;
+  transform: translateY(-2px);
 }
 
+/* Modals */
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.6);
-  backdrop-filter: blur(5px);
+  background: rgba(15, 23, 42, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -50,15 +63,4 @@ html, body {
 
 .modal-backdrop[hidden] {
   display: none !important;
-}
-
-/* Verify Modal Input Styling */
-.verify-code-input {
-  width: 100%;
-  text-align: center;
-  letter-spacing: 0.3em;
-  font-size: 1.5rem;
-  padding: 10px;
-  border-radius: 8px;
-  border: 1px solid #ccc;
 }
