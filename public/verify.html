@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Verifying…</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    :root {
+      --brand-color: #4A90E2;
+      --accent-color: #2ECC71;
+      --bg-color: #fafafa;
+      --text-color: #333;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --brand-color: #6AB0FF;
+        --accent-color: #4CD98A;
+        --bg-color: #1F1F1F;
+        --text-color: #E6E6E6;
+      }
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      background: var(--bg-color);
+      color: var(--text-color);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    .box {
+      background: var(--bg-color);
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      text-align: center;
+      width: 300px;
+      animation: fadeIn 0.4s ease;
+    }
+
+    .status {
+      font-size: 20px;
+      margin-top: 10px;
+    }
+
+    .success { color: var(--accent-color); }
+    .error { color: #e74c3c; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="box">
+    <div id="status" class="status">Verifying…</div>
+  </div>
+
+  <script>
+    async function verify() {
+      const params = new URLSearchParams(window.location.search);
+      const email = params.get("email");
+      const code = params.get("code");
+
+      const status = document.getElementById("status");
+
+      if (!email || !code) {
+        status.textContent = "Invalid verification link";
+        status.classList.add("error");
+        return;
+      }
+
+      const res = await fetch("/api/auth/verify-register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, code })
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        status.textContent = "Verified!";
+        status.classList.add("success");
+        setTimeout(() => window.location.href = "/login", 1500);
+      } else {
+        status.textContent = "Verification failed";
+        status.classList.add("error");
+      }
+    }
+
+    verify();
+  </script>
+
+</body>
+</html>
