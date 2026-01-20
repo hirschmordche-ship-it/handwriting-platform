@@ -28,32 +28,41 @@ const messages = {
           </h1>
 
           <p style="font-size:16px;">
-            Thank you for joining the Handwriting Platform!  
-            To complete your registration, please verify your account.
+            Your verification code is below.  
+            You can tap the code to copy it, or use the button to verify instantly.
           </p>
 
-          <h2 style="
+          <!-- CODE AS BUTTON -->
+          <div style="
+            display:inline-block;
+            padding:14px 24px;
+            background:#4A90E2;
+            color:white;
+            border-radius:8px;
             font-size:32px;
             letter-spacing:4px;
             text-align:center;
             margin:30px 0;
-            color:#333;
+            cursor:pointer;
+            user-select:all;
           ">
             ${code}
-          </h2>
+          </div>
 
-          <p>Copy your code quickly:</p>
-
-          <a style="display:inline-block;padding:12px 20px;background:#4A90E2;color:white;border-radius:6px;text-decoration:none;font-size:16px;margin-bottom:20px;">
-  ${code}
-</a>
-
-          <p>Or verify instantly:</p>
-
+          <!-- VERIFY BUTTON -->
           <a href="${BASE_URL}/auth/verify?email=${encodeURIComponent(email)}&code=${code}"
-   style="display:inline-block;padding:12px 20px;background:#2ECC71;color:white;border-radius:6px;text-decoration:none;font-size:16px;margin-bottom:20px;">
-  Verify My Account
-</a>
+             style="
+               display:inline-block;
+               padding:12px 20px;
+               background:#2ECC71;
+               color:white;
+               border-radius:6px;
+               text-decoration:none;
+               font-size:16px;
+               margin-bottom:20px;
+             ">
+            Verify My Account
+          </a>
 
           <p style="font-size:14px;">
             This code expires in 10 minutes.
@@ -95,39 +104,29 @@ const messages = {
           </h1>
 
           <p style="font-size:16px;">
-            תודה שהצטרפת לפלטפורמת הכתב!  
-            כדי להשלים את ההרשמה, יש לאמת את החשבון שלך.
+            קוד האימות שלך מופיע למטה.  
+            ניתן לגעת בקוד כדי להעתיק אותו, או להשתמש בכפתור לאימות מיידי.
           </p>
 
-          <h2 style="
+          <!-- CODE AS BUTTON -->
+          <div style="
+            display:inline-block;
+            padding:14px 24px;
+            background:#4A90E2;
+            color:white;
+            border-radius:8px;
             font-size:32px;
             letter-spacing:4px;
             text-align:center;
             margin:30px 0;
-            color:#333;
+            cursor:pointer;
+            user-select:all;
           ">
             ${code}
-          </h2>
+          </div>
 
-          <p>להעתקה מהירה של הקוד:</p>
-
-          <a href="${BASE_URL}/copy?code=${code}"
-             style="
-               display:inline-block;
-               padding:12px 20px;
-               background:#4A90E2;
-               color:white;
-               border-radius:6px;
-               text-decoration:none;
-               font-size:16px;
-               margin-bottom:20px;
-             ">
-            העתק קוד
-          </a>
-
-          <p>או אימות מיידי בלחיצה אחת:</p>
-
-          <a href="${BASE_URL}/verify?email=${encodeURIComponent(email)}&code=${code}"
+          <!-- VERIFY BUTTON -->
+          <a href="${BASE_URL}/auth/verify?email=${encodeURIComponent(email)}&code=${code}"
              style="
                display:inline-block;
                padding:12px 20px;
@@ -156,4 +155,3 @@ const messages = {
 };
 
 export default messages;
-
