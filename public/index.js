@@ -157,7 +157,7 @@ termsOk.addEventListener("click", closeTerms);
 // Verification modal
 function openVerifyModal(email) {
   const dict = i18n[currentLang];
-  pendingRegisterEmail = email; // Crucial: store email for step 2
+  pendingRegisterEmail = email; 
   verifyTitle.textContent = dict.regVerifyTitle;
   verifyMessage.textContent = dict.regVerifyPrompt;
   verifyCodeInput.value = "";
@@ -203,7 +203,8 @@ modeToggle.addEventListener("click", () => {
 // Language
 function setLanguage(lang) {
   currentLang = lang;
-  body.classList.toggle("rtl", lang === "he");
+  body.classList.remove("ltr", "rtl");
+  body.classList.add(lang === "he" ? "rtl" : "ltr");
   document.documentElement.lang = lang;
   
   const dict = i18n[lang];
@@ -239,16 +240,29 @@ function updateStrengthUI(pw) {
   regStrengthLabel.textContent = i18n[currentLang].strength[res.valid ? "complete" : "weak"];
 }
 
-function updateBtn() {
-  const valid = evaluatePassword(regPassword.value).valid && 
-                regPassword.value === regConfirmPassword.value && 
-                regTerms.checked;
-  document.getElementById("registerButton").classList.toggle("enabled", valid);
+function updateRegisterButtonState() {
+  const emailVal = regEmail.value.trim();
+  const passVal = regPassword.value;
+  const confVal = regConfirmPassword.value;
+  const evaluation = evaluatePassword(passVal);
+  
+  const isValid = 
+    emailVal.length > 3 && 
+    evaluation.valid && 
+    passVal === confVal && 
+    regTerms.checked;
+
+  const btn = document.getElementById("registerButton");
+  btn.classList.toggle("enabled", isValid);
 }
 
-regPassword.addEventListener("input", (e) => { updateStrengthUI(e.target.value); updateBtn(); });
-regConfirmPassword.addEventListener("input", updateBtn);
-regTerms.addEventListener("change", updateBtn);
+regEmail.addEventListener("input", updateRegisterButtonState);
+regPassword.addEventListener("input", (e) => { 
+  updateStrengthUI(e.target.value); 
+  updateRegisterButtonState(); 
+});
+regConfirmPassword.addEventListener("input", updateRegisterButtonState);
+regTerms.addEventListener("change", updateRegisterButtonState);
 
 // Register Flow
 registerForm.addEventListener("submit", async (e) => {
@@ -256,16 +270,20 @@ registerForm.addEventListener("submit", async (e) => {
   const btn = document.getElementById("registerButton");
   if (!btn.classList.contains("enabled")) return;
 
+  const email = regEmail.value.trim();
+  const password = regPassword.value;
+
   try {
     btn.disabled = true;
-    const email = regEmail.value.trim();
     const res = await fetch("/api/auth/start-register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password: regPassword.value, lang: currentLang })
+      body: JSON.stringify({ email, password, lang: currentLang })
     });
     if (!res.ok) throw new Error();
-    openVerifyModal(email);
+    
+    // Modal only opens AFTER the button is clicked and API responds
+    openVerifyModal(email); 
   } catch (err) {
     regMessages.textContent = i18n[currentLang].regStartError;
   } finally {
@@ -276,7 +294,10 @@ registerForm.addEventListener("submit", async (e) => {
 // Verify Code Flow
 verifySubmit.addEventListener("click", async () => {
   const code = verifyCodeInput.value.trim();
-  if (!code || !pendingRegisterEmail) return;
+  if (!code || !pendingRegisterEmail) {
+    verifyMessages.textContent = i18n[currentLang].regVerifyError;
+    return;
+  }
 
   try {
     verifySubmit.disabled = true;
@@ -316,9 +337,14 @@ loginForm.addEventListener("submit", async (e) => {
 });
 
 function init() {
-  setMode(localStorage.getItem("themeMode") || "light");
-  setLanguage(localStorage.getItem("authLang") || "en");
-  setActiveTab("register");
+  const savedTheme = localStorage.getItem("themeMode");
+  setMode(savedTheme === "dark" ? "dark" : "light");
+
+  const savedLang = localStorage.getItem("authLang");
+  setLanguage(savedLang === "he" ? "he" : "en");
+
+  updateStrengthUI("");
+  updateRegisterButtonState();
 }
 document.addEventListener("DOMContentLoaded", init);
 
