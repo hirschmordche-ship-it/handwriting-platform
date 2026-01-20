@@ -1,6 +1,6 @@
 // api/auth/email-templates.js
 
-export const messages = {
+const messages = {
   en: {
     subject: "Handwriting Platform – Verify Your Account",
     html: (code, email) => `
@@ -13,33 +13,15 @@ export const messages = {
         border-radius:12px;
       ">
 
-        <style>
-          :root {
-            --brand-color: #4A90E2;
-            --accent-color: #2ECC71;
-            --text-color: #333;
-            --bg-color: #ffffff;
-          }
-
-          @media (prefers-color-scheme: dark) {
-            :root {
-              --brand-color: #6AB0FF;
-              --accent-color: #4CD98A;
-              --text-color: #E6E6E6;
-              --bg-color: #1F1F1F;
-            }
-          }
-        </style>
-
         <div style="
-          background:var(--bg-color);
+          background:#ffffff;
           padding:30px;
           border-radius:12px;
           box-shadow:0 4px 20px rgba(0,0,0,0.08);
-          color:var(--text-color);
+          color:#333;
         ">
 
-          <h1 style="color:var(--brand-color); margin-top:0;">
+          <h1 style="color:#4A90E2; margin-top:0;">
             Handwriting Platform
           </h1>
 
@@ -53,7 +35,7 @@ export const messages = {
             letter-spacing:4px;
             text-align:center;
             margin:30px 0;
-            color:var(--text-color);
+            color:#333;
           ">
             ${code}
           </h2>
@@ -64,7 +46,7 @@ export const messages = {
              style="
                display:inline-block;
                padding:12px 20px;
-               background:var(--brand-color);
+               background:#4A90E2;
                color:white;
                border-radius:6px;
                text-decoration:none;
@@ -80,7 +62,7 @@ export const messages = {
              style="
                display:inline-block;
                padding:12px 20px;
-               background:var(--accent-color);
+               background:#2ECC71;
                color:white;
                border-radius:6px;
                text-decoration:none;
@@ -117,33 +99,15 @@ export const messages = {
         text-align:right;
       ">
 
-        <style>
-          :root {
-            --brand-color: #4A90E2;
-            --accent-color: #2ECC71;
-            --text-color: #333;
-            --bg-color: #ffffff;
-          }
-
-          @media (prefers-color-scheme: dark) {
-            :root {
-              --brand-color: #6AB0FF;
-              --accent-color: #4CD98A;
-              --text-color: #E6E6E6;
-              --bg-color: #1F1F1F;
-            }
-          }
-        </style>
-
         <div style="
-          background:var(--bg-color);
+          background:#ffffff;
           padding:30px;
           border-radius:12px;
           box-shadow:0 4px 20px rgba(0,0,0,0.08);
-          color:var(--text-color);
+          color:#333;
         ">
 
-          <h1 style="color:var(--brand-color); margin-top:0;">
+          <h1 style="color:#4A90E2; margin-top:0;">
             פלטפורמת הכתב
           </h1>
 
@@ -157,7 +121,7 @@ export const messages = {
             letter-spacing:4px;
             text-align:center;
             margin:30px 0;
-            color:var(--text-color);
+            color:#333;
           ">
             ${code}
           </h2>
@@ -168,7 +132,7 @@ export const messages = {
              style="
                display:inline-block;
                padding:12px 20px;
-               background:var(--brand-color);
+               background:#4A90E2;
                color:white;
                border-radius:6px;
                text-decoration:none;
@@ -184,7 +148,7 @@ export const messages = {
              style="
                display:inline-block;
                padding:12px 20px;
-               background:var(--accent-color);
+               background:#2ECC71;
                color:white;
                border-radius:6px;
                text-decoration:none;
@@ -207,4 +171,6 @@ export const messages = {
     `
   }
 };
+
 export default messages;
+
