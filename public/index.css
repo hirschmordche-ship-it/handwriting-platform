@@ -45,6 +45,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+  /* FIX: Allow vertical scroll if content is long, but block horizontal */
   overflow-x: hidden;
   position: relative;
   color: var(--text-main-light);
@@ -67,7 +68,7 @@ body.dark-mode {
   filter: blur(12px);
   z-index: -2;
   transition: background var(--transition-med), filter var(--transition-med);
-  /* FIX: Background must not block interactions/swipes */
+  /* FIX: Background must not block interactions or swipes */
   pointer-events: none; 
 }
 
@@ -732,3 +733,4 @@ body.rtl .field-row {
   pointer-events: none !important;
   touch-action: none !important;
 }
+
