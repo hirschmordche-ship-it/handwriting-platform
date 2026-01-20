@@ -1,3 +1,5 @@
+// api/auth/email-templates.js
+
 const BASE_URL = "https://handwriting-platform.vercel.app";
 
 const messages = {
@@ -31,9 +33,11 @@ const messages = {
           </p>
 
           <!-- CODE AS BUTTON (LINK TO COPY PAGE) -->
-          <a href="${BASE_URL}/copy?email=${encodeURIComponent(email)}&code=${encodeURIComponent(code)}&lang=en"
+          <a href="${BASE_URL}/copy.html?email=${encodeURIComponent(email)}&code=${encodeURIComponent(code)}&lang=en"
              style="
-               display:inline-block;
+               display:block;
+               width:fit-content;
+               margin:30px auto;
                padding:16px 28px;
                background:#4A90E2;
                color:white;
@@ -41,22 +45,22 @@ const messages = {
                font-size:32px;
                letter-spacing:4px;
                text-decoration:none;
-               margin:30px 0;
              ">
             ${code}
           </a>
 
-          <!-- VERIFY BUTTON -->
-          <a href="${BASE_URL}/verify?email=${encodeURIComponent(email)}&code=${encodeURIComponent(code)}&lang=en"
+          <!-- VERIFY BUTTON (SMALLER + CENTERED) -->
+          <a href="${BASE_URL}/verify.html?email=${encodeURIComponent(email)}&code=${encodeURIComponent(code)}&lang=en"
              style="
-               display:inline-block;
-               padding:14px 20px;
+               display:block;
+               width:fit-content;
+               margin:10px auto 20px auto;
+               padding:10px 16px;
                background:#2ECC71;
                color:white;
-               border-radius:8px;
+               border-radius:6px;
                text-decoration:none;
-               font-size:18px;
-               margin-bottom:20px;
+               font-size:14px;
              ">
             Verify My Account
           </a>
@@ -106,9 +110,11 @@ const messages = {
           </p>
 
           <!-- CODE AS BUTTON (LINK TO COPY PAGE) -->
-          <a href="${BASE_URL}/copy?email=${encodeURIComponent(email)}&code=${encodeURIComponent(code)}&lang=he"
+          <a href="${BASE_URL}/copy.html?email=${encodeURIComponent(email)}&code=${encodeURIComponent(code)}&lang=he"
              style="
-               display:inline-block;
+               display:block;
+               width:fit-content;
+               margin:30px auto;
                padding:16px 28px;
                background:#4A90E2;
                color:white;
@@ -116,22 +122,22 @@ const messages = {
                font-size:32px;
                letter-spacing:4px;
                text-decoration:none;
-               margin:30px 0;
              ">
             ${code}
           </a>
 
-          <!-- VERIFY BUTTON -->
-          <a href="${BASE_URL}/verify?email=${encodeURIComponent(email)}&code=${encodeURIComponent(code)}&lang=he"
+          <!-- VERIFY BUTTON (SMALLER + CENTERED) -->
+          <a href="${BASE_URL}/verify.html?email=${encodeURIComponent(email)}&code=${encodeURIComponent(code)}&lang=he"
              style="
-               display:inline-block;
-               padding:14px 20px;
+               display:block;
+               width:fit-content;
+               margin:10px auto 20px auto;
+               padding:10px 16px;
                background:#2ECC71;
                color:white;
-               border-radius:8px;
+               border-radius:6px;
                text-decoration:none;
-               font-size:18px;
-               margin-bottom:20px;
+               font-size:14px;
              ">
             אמת את החשבון שלי
           </a>
