@@ -1,5 +1,3 @@
-// api/auth/email-templates.js
-
 const BASE_URL = "https://handwriting-platform.vercel.app";
 
 const messages = {
@@ -29,36 +27,35 @@ const messages = {
 
           <p style="font-size:16px;">
             Your verification code is below.  
-            You can tap the code to copy it, or use the button to verify instantly.
+            Tap the code to copy it, or use the button below to verify instantly.
           </p>
 
-          <!-- CODE AS BUTTON -->
-          <div style="
-            display:inline-block;
-            padding:14px 24px;
-            background:#4A90E2;
-            color:white;
-            border-radius:8px;
-            font-size:32px;
-            letter-spacing:4px;
-            text-align:center;
-            margin:30px 0;
-            cursor:pointer;
-            user-select:all;
-          ">
-            ${code}
-          </div>
-
-          <!-- VERIFY BUTTON -->
-          <a href="${BASE_URL}/verify?email=${encodeURIComponent(email)}&code=${code}"
+          <!-- CODE AS BUTTON (LINK TO COPY PAGE) -->
+          <a href="${BASE_URL}/copy?email=${encodeURIComponent(email)}&code=${encodeURIComponent(code)}&lang=en"
              style="
                display:inline-block;
-               padding:12px 20px;
+               padding:16px 28px;
+               background:#4A90E2;
+               color:white;
+               border-radius:10px;
+               font-size:32px;
+               letter-spacing:4px;
+               text-decoration:none;
+               margin:30px 0;
+             ">
+            ${code}
+          </a>
+
+          <!-- VERIFY BUTTON -->
+          <a href="${BASE_URL}/verify?email=${encodeURIComponent(email)}&code=${encodeURIComponent(code)}&lang=en"
+             style="
+               display:inline-block;
+               padding:14px 20px;
                background:#2ECC71;
                color:white;
-               border-radius:6px;
+               border-radius:8px;
                text-decoration:none;
-               font-size:16px;
+               font-size:18px;
                margin-bottom:20px;
              ">
             Verify My Account
@@ -105,36 +102,35 @@ const messages = {
 
           <p style="font-size:16px;">
             קוד האימות שלך מופיע למטה.  
-            ניתן לגעת בקוד כדי להעתיק אותו, או להשתמש בכפתור לאימות מיידי.
+            ניתן לגעת בקוד כדי להעתיק אותו, או להשתמש בכפתור למטה לאימות מיידי.
           </p>
 
-          <!-- CODE AS BUTTON -->
-          <div style="
-            display:inline-block;
-            padding:14px 24px;
-            background:#4A90E2;
-            color:white;
-            border-radius:8px;
-            font-size:32px;
-            letter-spacing:4px;
-            text-align:center;
-            margin:30px 0;
-            cursor:pointer;
-            user-select:all;
-          ">
-            ${code}
-          </div>
-
-          <!-- VERIFY BUTTON -->
-          <a href="${BASE_URL}/verify?email=${encodeURIComponent(email)}&code=${code}"
+          <!-- CODE AS BUTTON (LINK TO COPY PAGE) -->
+          <a href="${BASE_URL}/copy?email=${encodeURIComponent(email)}&code=${encodeURIComponent(code)}&lang=he"
              style="
                display:inline-block;
-               padding:12px 20px;
+               padding:16px 28px;
+               background:#4A90E2;
+               color:white;
+               border-radius:10px;
+               font-size:32px;
+               letter-spacing:4px;
+               text-decoration:none;
+               margin:30px 0;
+             ">
+            ${code}
+          </a>
+
+          <!-- VERIFY BUTTON -->
+          <a href="${BASE_URL}/verify?email=${encodeURIComponent(email)}&code=${encodeURIComponent(code)}&lang=he"
+             style="
+               display:inline-block;
+               padding:14px 20px;
                background:#2ECC71;
                color:white;
-               border-radius:6px;
+               border-radius:8px;
                text-decoration:none;
-               font-size:16px;
+               font-size:18px;
                margin-bottom:20px;
              ">
             אמת את החשבון שלי
@@ -155,4 +151,3 @@ const messages = {
 };
 
 export default messages;
-
