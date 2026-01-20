@@ -54,14 +54,14 @@
 
     .btn {
       display: block;
-      width: 100%;
-      padding: 14px;
+      width: fit-content;
+      margin: 10px auto 20px auto;
+      padding: 10px 16px;
       background: #2ECC71;
       color: white;
-      border-radius: 8px;
+      border-radius: 6px;
       text-decoration: none;
-      font-size: 18px;
-      margin-top: 10px;
+      font-size: 14px;
     }
 
     .toast {
@@ -101,13 +101,11 @@
   </div>
 
   <script>
-    // Read URL parameters
     const params = new URLSearchParams(window.location.search);
     const email = params.get("email");
     const code = params.get("code");
     const lang = params.get("lang") || "en";
 
-    // Elements
     const title = document.getElementById("title");
     const subtitle = document.getElementById("subtitle");
     const codeBox = document.getElementById("codeBox");
@@ -122,11 +120,22 @@
     // Language handling
     if (lang === "he") {
       container.classList.add("rtl");
-
-      title.textContent = "תודה שהצטרפת אלינו";
-      subtitle.textContent = "קוד האימות שלך מופיע למטה. ניתן לגעת בקוד כדי להעתיק אותו ואז להדביק אותו בדפדפן.";
+      title.textContent = "תודה שנרשמת אלינו";
+      subtitle.textContent = "קוד האימות שלך מופיע למטה. ניתן ללחוץ עליו כדי להעתיק אותו ולהדביק בדפדפן.";
       verifyBtn.textContent = "אמת את החשבון שלי";
       toast.textContent = "הועתק!";
+    }
+
+    // Missing params fallback
+    if (!email || !code) {
+      errorBox.style.display = "block";
+      errorBox.textContent = lang === "he"
+        ? "הקישור לא תקין — חסר מידע."
+        : "Invalid link — missing information.";
+      verifyBtn.style.display = "none";
+      codeBox.style.display = "none";
+      subtitle.style.display = "none";
+      return;
     }
 
     // Copy on tap
@@ -139,21 +148,21 @@
     // Verification request
     verifyBtn.addEventListener("click", async () => {
       errorBox.style.display = "none";
-      verifyBtn.textContent = lang === "he" ? "מאמת…" : "Verifying…";
+      verifyBtn.textContent = lang === "he" ? "מאמת..." : "Verifying...";
 
       try {
         const res = await fetch("/api/auth/verify-register", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, code })
+          body: JSON.stringify({ email, code }),
         });
 
         const data = await res.json();
 
         if (data.success) {
           verifyBtn.textContent = lang === "he"
-            ? "האימות הצליח — מעביר אותך…"
-            : "Verification successful — redirecting…";
+            ? "האימות הצליח — מעביר אותך..."
+            : "Verification successful — redirecting...";
 
           setTimeout(() => {
             window.location.href = "/dashboard";
@@ -174,4 +183,4 @@
     });
   </script>
 </body>
-</htmשליy
+</html>
