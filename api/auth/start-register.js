@@ -1,6 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
-import { messages } from "./email-templates";
+import messages from "./email-templates.js";
 
 export default async function handler(req, res) {
   try {
@@ -95,4 +95,3 @@ export default async function handler(req, res) {
     return res.status(500).json({ success: false, error: "Server error" });
   }
 }
-
