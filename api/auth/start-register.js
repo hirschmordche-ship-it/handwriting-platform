@@ -30,7 +30,9 @@ export default async function handler(req, res) {
       .from("users")
       .select("id")
       .eq("email", email)
-      .single();
+      .maybeSingle();
+
+    if (existingError) { log("Existing user lookup error:", JSON.stringify(existingError)); }
 
     if (existingUser) {
       return res.status(400).json({
