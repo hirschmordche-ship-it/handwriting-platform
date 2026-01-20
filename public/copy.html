@@ -54,14 +54,14 @@
 
     .btn {
       display: block;
-      width: 100%;
-      padding: 14px;
+      width: fit-content;
+      margin: 10px auto 20px auto;
+      padding: 10px 16px;
       background: #2ECC71;
       color: white;
-      border-radius: 8px;
+      border-radius: 6px;
       text-decoration: none;
-      font-size: 18px;
-      margin-top: 10px;
+      font-size: 14px;
     }
 
     .toast {
@@ -93,13 +93,11 @@
   </div>
 
   <script>
-    // Read URL parameters
     const params = new URLSearchParams(window.location.search);
     const email = params.get("email");
     const code = params.get("code");
     const lang = params.get("lang") || "en";
 
-    // Elements
     const title = document.getElementById("title");
     const subtitle = document.getElementById("subtitle");
     const codeBox = document.getElementById("codeBox");
@@ -113,7 +111,6 @@
     // Language handling
     if (lang === "he") {
       container.classList.add("rtl");
-
       title.textContent = "קוד האימות שלך";
       subtitle.textContent = "גע בקוד למטה כדי להעתיק אותו ואז להדביק אותו בדפדפן.";
       verifyBtn.textContent = "עבור לעמוד האימות";
@@ -127,9 +124,10 @@
       setTimeout(() => (toast.style.display = "none"), 1500);
     });
 
-    // Go to verify page
+    // Go to verify page (corrected)
     verifyBtn.addEventListener("click", () => {
-      window.location.href = `/verify?email=${encodeURIComponent(email)}&code=${code}&lang=${lang}`;
+      window.location.href =
+        `/verify.html?email=${encodeURIComponent(email)}&code=${encodeURIComponent(code)}&lang=${encodeURIComponent(lang)}`;
     });
   </script>
 </body>
