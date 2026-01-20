@@ -1,84 +1,136 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Copy Code</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <style>
-    :root {
-      --brand-color: #4A90E2;
-      --accent-color: #2ECC71;
-      --bg-color: #f5f5f5;
-      --text-color: #333;
-    }
-
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --brand-color: #6AB0FF;
-        --accent-color: #4CD98A;
-        --bg-color: #1F1F1F;
-        --text-color: #E6E6E6;
-      }
-    }
-
     body {
+      margin: 0;
+      padding: 0;
       font-family: Arial, sans-serif;
-      background: var(--bg-color);
-      color: var(--text-color);
+      background: #f5f7fa;
       display: flex;
       justify-content: center;
       align-items: center;
-      height: 100vh;
-      margin: 0;
+      min-height: 100vh;
     }
 
-    .box {
-      background: var(--bg-color);
-      padding: 30px;
-      border-radius: 12px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    .card {
+      background: white;
+      width: 90%;
+      max-width: 420px;
+      padding: 28px;
+      border-radius: 14px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
       text-align: center;
-      animation: fadeIn 0.4s ease;
     }
 
-    .copied {
+    h1 {
+      margin-top: 0;
       font-size: 24px;
-      color: var(--accent-color);
-      opacity: 0;
-      animation: pop 1s forwards;
+      color: #4A90E2;
     }
 
-    @keyframes pop {
-      0% { transform: scale(0.5); opacity: 0; }
-      50% { transform: scale(1.2); opacity: 1; }
-      100% { transform: scale(1); opacity: 1; }
+    p {
+      font-size: 16px;
+      color: #444;
+      margin-bottom: 18px;
     }
 
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
+    .code-box {
+      display: inline-block;
+      padding: 16px 26px;
+      background: #4A90E2;
+      color: white;
+      border-radius: 10px;
+      font-size: 32px;
+      letter-spacing: 4px;
+      cursor: pointer;
+      user-select: all;
+      margin: 22px 0;
+    }
+
+    .btn {
+      display: block;
+      width: 100%;
+      padding: 14px;
+      background: #2ECC71;
+      color: white;
+      border-radius: 8px;
+      text-decoration: none;
+      font-size: 18px;
+      margin-top: 10px;
+    }
+
+    .toast {
+      margin-top: 12px;
+      font-size: 14px;
+      color: #2ECC71;
+      display: none;
+    }
+
+    .rtl {
+      direction: rtl;
+      text-align: right;
     }
   </style>
 </head>
-<body>
 
-  <div class="box">
-    <div id="msg" class="copied">Copied!</div>
+<body>
+  <div class="card" id="container">
+    <h1 id="title">Your Verification Code</h1>
+    <p id="subtitle">
+      Tap the code below to copy it, then paste it into your browser.
+    </p>
+
+    <div id="codeBox" class="code-box">000000</div>
+
+    <a id="verifyBtn" class="btn">Go to Verification</a>
+
+    <div id="toast" class="toast">Copied!</div>
   </div>
 
   <script>
+    // Read URL parameters
     const params = new URLSearchParams(window.location.search);
+    const email = params.get("email");
     const code = params.get("code");
+    const lang = params.get("lang") || "en";
 
-    if (code) {
-      navigator.clipboard.writeText(code).catch(() => {});
+    // Elements
+    const title = document.getElementById("title");
+    const subtitle = document.getElementById("subtitle");
+    const codeBox = document.getElementById("codeBox");
+    const verifyBtn = document.getElementById("verifyBtn");
+    const toast = document.getElementById("toast");
+    const container = document.getElementById("container");
+
+    // Insert code
+    if (code) codeBox.textContent = code;
+
+    // Language handling
+    if (lang === "he") {
+      container.classList.add("rtl");
+
+      title.textContent = "קוד האימות שלך";
+      subtitle.textContent = "גע בקוד למטה כדי להעתיק אותו ואז להדביק אותו בדפדפן.";
+      verifyBtn.textContent = "עבור לעמוד האימות";
+      toast.textContent = "הועתק!";
     }
 
-    setTimeout(() => {
-      window.location.href = "/";
-    }, 2000);
-  </script>
+    // Copy on tap
+    codeBox.addEventListener("click", () => {
+      navigator.clipboard.writeText(code);
+      toast.style.display = "block";
+      setTimeout(() => (toast.style.display = "none"), 1500);
+    });
 
+    // Go to verify page
+    verifyBtn.addEventListener("click", () => {
+      window.location.href = `/verify?email=${encodeURIComponent(email)}&code=${code}&lang=${lang}`;
+    });
+  </script>
 </body>
 </html>
