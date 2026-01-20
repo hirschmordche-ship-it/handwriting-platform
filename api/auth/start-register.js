@@ -25,7 +25,7 @@ export default async function handler(req, res) {
       process.env.SUPABASE_SERVICE_ROLE_KEY
     );
 
-    // 1. Check if user exists
+    // 1. Check if user already exists
     const { data: existingUser } = await supabase
       .from("users")
       .select("id")
@@ -39,37 +39,24 @@ export default async function handler(req, res) {
       });
     }
 
-    // 2. Cooldown check
-    const threeMinutesAgo = new Date(Date.now() - 3 * 60 * 1000).toISOString();
-
-    const { data: recent } = await supabase
+    // 2. Delete any previous pending registrations for this email
+    await supabase
       .from("pending_registrations")
-      .select("id")
-      .eq("email", email)
-      .gt("created_at", threeMinutesAgo)
-      .eq("used", false);
+      .delete()
+      .eq("email", email);
 
-    if (recent && recent.length > 0) {
-      return res.status(429).json({
-        success: false,
-        error: "Please wait 3 minutes before requesting another code."
-      });
-    }
-
-    // 3. Generate code
+    // 3. Generate new code
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
 
-    // 4. Insert pending registration
+    // 4. Insert new pending registration
     const { error: insertError } = await supabase
       .from("pending_registrations")
       .insert({
         email,
         language: lang || "en",
         code,
-        created_at: new Date().toISOString(),
-        expires_at: expiresAt,
-        used: false
+        expires_at: expiresAt
       });
 
     if (insertError) {
@@ -81,7 +68,7 @@ export default async function handler(req, res) {
     const msg = messages[lang] || messages.en;
 
     const { error: emailError } = await resend.emails.send({
-      from: "Handwriting Platform <noreply@yourdomain.com>",
+      from: "Handwriting Platform <noreply@handwriting-platform.vercel.app>",
       to: email,
       subject: msg.subject,
       html: msg.html(code, email)
@@ -96,9 +83,7 @@ export default async function handler(req, res) {
       next: "verify",
       email
     });
-
   } catch (err) {
     return res.status(500).json({ success: false, error: "Server error" });
   }
 }
-
