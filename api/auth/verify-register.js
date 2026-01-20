@@ -53,6 +53,7 @@ export default async function handler(req, res) {
   }
 }
 
+const cleanCode = String(code).trim();
 
 // api/auth/verify-register.js
 
@@ -77,12 +78,12 @@ export default async function handler(req, res) {
 
     // Check for valid, unused code
     const { data: verification, error: fetchError } = await supabase
-      .from("email_verifications")
+      .from("pending_registrations")
       .select("*")
       .eq("email", email)
-      .eq("code", code)
+      .eq("code", cleanCode)
       .eq("used", false)
-      .lt("expires_at", new Date().toISOString())
+      .gt("expires_at", new Date().toISOString())
       .single();
 
     if (fetchError || !verification) {
@@ -91,7 +92,7 @@ export default async function handler(req, res) {
 
     // Mark code as used
     await supabase
-      .from("email_verifications")
+      .from("pending_registrations")
       .update({ used: true })
       .eq("id", verification.id);
 
