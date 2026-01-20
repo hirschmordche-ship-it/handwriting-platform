@@ -146,7 +146,6 @@ const tabRegister = document.getElementById("tabRegister");
 const tabLogin = document.getElementById("tabLogin");
 const registerForm = document.getElementById("registerForm");
 const loginForm = document.getElementById("loginForm");
-const langToggle = document.getElementById("langToggle");
 const modeToggle = document.getElementById("modeToggle");
 const modeIcon = document.querySelector(".mode-toggle-knob .mode-icon");
 
@@ -161,6 +160,7 @@ const regTerms = document.getElementById("regTerms");
 const regEmail = document.getElementById("regEmail");
 const loginEmail = document.getElementById("loginEmail");
 const rememberMe = document.getElementById("rememberMe");
+const regSubmit = document.getElementById("regSubmit");
 
 // Modals
 const modalBackdrop = document.getElementById("modalBackdrop");
@@ -197,9 +197,6 @@ function closeModal() {
 
 modalClose.addEventListener("click", closeModal);
 modalOk.addEventListener("click", closeModal);
-modalBackdrop.addEventListener("click", (e) => {
-  if (e.target === modalBackdrop) closeModal();
-});
 
 // Terms modal
 openTerms.addEventListener("click", () => {
@@ -213,45 +210,80 @@ function closeTerms() {
 }
 termsClose.addEventListener("click", closeTerms);
 termsOk.addEventListener("click", closeTerms);
-termsBackdrop.addEventListener("click", (e) => {
-  if (e.target === termsBackdrop) closeTerms();
-});
 
-// Verification modal helpers
-function openVerifyModal(email) {
-  const dict = i18n[currentLang];
-  pendingRegisterEmail = email;
-  verifyTitle.textContent = dict.regVerifyTitle;
-  verifyMessage.textContent = dict.regVerifyPrompt;
-  verifyCodeInput.value = "";
-  verifyMessages.textContent = "";
-  verifyBackdrop.hidden = false;
-  verifyCodeInput.focus();
+// YOUR ORIGINAL STRENGTH LOGIC
+function getStrength(pwd) {
+  if (!pwd) return 0;
+  if (pwd.length < 8) return 1;
+  let s = 2;
+  if (/[0-9]/.test(pwd)) s++;
+  if (/[^A-Za-z0-9]/.test(pwd)) s++;
+  return s;
 }
 
-function closeVerifyModal() {
-  verifyBackdrop.hidden = true;
-  pendingRegisterEmail = "";
+function updateStrengthUI(pwd) {
+  const s = getStrength(pwd);
+  const dict = i18n[currentLang].strength;
+  regStrengthBar.className = "strength-bar";
+  
+  if (s === 0) {
+    regStrengthBar.style.width = "0";
+    regStrengthLabel.textContent = "";
+  } else if (s === 1) {
+    regStrengthBar.style.width = "25%";
+    regStrengthBar.classList.add("strength-weak");
+    regStrengthLabel.textContent = dict.tooShort;
+  } else if (s === 2) {
+    regStrengthBar.style.width = "50%";
+    regStrengthBar.classList.add("strength-weak");
+    regStrengthLabel.textContent = dict.weak;
+  } else if (s === 3) {
+    regStrengthBar.style.width = "75%";
+    regStrengthBar.classList.add("strength-medium");
+    regStrengthLabel.textContent = dict.medium;
+  } else if (s === 4) {
+    regStrengthBar.style.width = "100%";
+    regStrengthBar.classList.add("strength-strong");
+    regStrengthLabel.textContent = dict.strong;
+  } else {
+    regStrengthBar.style.width = "100%";
+    regStrengthBar.classList.add("strength-complete");
+    regStrengthLabel.textContent = dict.complete;
+  }
 }
-verifyClose.addEventListener("click", closeVerifyModal);
-verifyBackdrop.addEventListener("click", (e) => {
-  if (e.target === verifyBackdrop) closeVerifyModal();
+
+function updateRegisterButtonState() {
+  const s = getStrength(regPassword.value);
+  const isMatch = regPassword.value === regConfirmPassword.value;
+  const emailValid = regEmail.value.includes("@");
+  const termsOk = regTerms.checked;
+  regSubmit.disabled = !(s >= 2 && isMatch && emailValid && termsOk);
+}
+
+regPassword.addEventListener("input", (e) => {
+  updateStrengthUI(e.target.value);
+  updateRegisterButtonState();
 });
 
-// Tabs
+regConfirmPassword.addEventListener("input", updateRegisterButtonState);
+regEmail.addEventListener("input", updateRegisterButtonState);
+regTerms.addEventListener("change", updateRegisterButtonState);
+
+// Tab switching
 function setActiveTab(tab) {
   if (tab === "register") {
     tabRegister.classList.add("active");
     tabLogin.classList.remove("active");
-    registerForm.classList.add("active");
-    loginForm.classList.remove("active");
+    registerForm.hidden = false;
+    loginForm.hidden = true;
   } else {
     tabLogin.classList.add("active");
     tabRegister.classList.remove("active");
-    loginForm.classList.add("active");
-    registerForm.classList.remove("active");
+    loginForm.hidden = false;
+    registerForm.hidden = true;
   }
 }
+
 tabRegister.addEventListener("click", () => setActiveTab("register"));
 tabLogin.addEventListener("click", () => setActiveTab("login"));
 
@@ -271,196 +303,91 @@ function setMode(mode) {
     localStorage.setItem("themeMode", "light");
   }
 }
+
 modeToggle.addEventListener("click", () => {
   const isDark = body.classList.contains("dark-mode");
   setMode(isDark ? "light" : "dark");
 });
 
 // Language Toggle
+const langEn = document.getElementById("langEn");
+const langHe = document.getElementById("langHe");
+const langThumb = document.querySelector(".lang-toggle-thumb");
+
 function setLanguage(lang) {
   currentLang = lang;
   localStorage.setItem("authLang", lang);
   const dict = i18n[lang];
 
-  // Update classes
-  body.className = body.className.replace(/ltr|rtl/g, "").trim();
-  body.classList.add(lang === "he" ? "rtl" : "ltr");
-  langToggle.className = "lang-toggle-pill " + (lang === "he" ? "lang-he" : "lang-en");
+  if (lang === "he") {
+    body.classList.add("rtl");
+    body.classList.remove("ltr");
+    langThumb.style.transform = "translateX(100%)";
+  } else {
+    body.classList.add("ltr");
+    body.classList.remove("rtl");
+    langThumb.style.transform = "translateX(0)";
+  }
 
-  // Labels
+  // Update UI strings
   document.getElementById("regTitle").textContent = dict["register.title"];
-  document.getElementById("regEmailLabel").textContent = dict["register.emailLabel"];
+  document.querySelectorAll("label[for='regEmail']").forEach(l => l.textContent = dict["register.emailLabel"]);
   regEmail.placeholder = dict["register.emailPlaceholder"];
-  document.getElementById("regPasswordLabel").textContent = dict["register.passwordLabel"];
+  document.querySelectorAll("label[for='regPassword']").forEach(l => l.textContent = dict["register.passwordLabel"]);
   regPassword.placeholder = dict["register.passwordPlaceholder"];
-  document.getElementById("regConfirmLabel").textContent = dict["register.confirmLabel"];
+  document.querySelectorAll("label[for='regConfirmPassword']").forEach(l => l.textContent = dict["register.confirmLabel"]);
   regConfirmPassword.placeholder = dict["register.confirmPlaceholder"];
-  document.getElementById("termsTextBefore").textContent = dict["register.terms.before"];
-  openTerms.textContent = dict["register.terms.word"];
-  document.getElementById("termsTextAfter").textContent = dict["register.terms.after"];
-  document.getElementById("registerButton").textContent = dict["register.submit"];
+  document.getElementById("termsBefore").textContent = dict["register.terms.before"];
+  document.getElementById("openTerms").textContent = dict["register.terms.word"];
+  document.getElementById("termsAfter").textContent = dict["register.terms.after"];
+  document.getElementById("regSubmit").textContent = dict["register.submit"];
 
   document.getElementById("loginTitle").textContent = dict["login.title"];
-  document.getElementById("loginEmailLabel").textContent = dict["login.emailLabel"];
   loginEmail.placeholder = dict["login.emailPlaceholder"];
-  document.getElementById("loginPasswordLabel").textContent = dict["login.passwordLabel"];
   loginPassword.placeholder = dict["login.passwordPlaceholder"];
   document.getElementById("rememberLabel").textContent = dict["login.remember"];
   document.getElementById("forgotPassword").textContent = dict["login.forgot"];
-  document.getElementById("loginButton").textContent = dict["login.submit"];
-
-  tabRegister.textContent = dict["register.submit"];
-  tabLogin.textContent = dict["login.submit"];
-
-  document.getElementById("regHelp").textContent = dict["password.help"];
-  document.getElementById("loginHelp").textContent = dict["password.help"];
-  modalOk.textContent = dict["modal.ok"];
-  termsOk.textContent = dict["modal.ok"];
-  verifySubmit.textContent = dict["modal.ok"]; // Fallback if no specific verify btn text
-
+  document.getElementById("loginSubmit").textContent = dict["login.submit"];
+  
   document.getElementById("footerText").innerHTML = dict["footer.text"];
-
-  // Reset messages
-  regMessages.textContent = "";
-  loginMessages.textContent = "";
+  
   updateStrengthUI(regPassword.value);
 }
-langToggle.addEventListener("click", () => {
-  setLanguage(currentLang === "en" ? "he" : "en");
-});
 
-// Password validation
-function getPasswordStrength(p) {
-  if (!p) return 0;
-  if (p.length < 8) return 1;
-  let s = 0;
-  if (/[a-z]/.test(p)) s++;
-  if (/[A-Z]/.test(p)) s++;
-  if (/[0-9]/.test(p)) s++;
-  if (/[^a-zA-Z0-9]/.test(p)) s++;
-  if (p.length >= 10) s++;
-  return Math.min(s, 4);
-}
+langEn.addEventListener("click", () => setLanguage("en"));
+langHe.addEventListener("click", () => setLanguage("he"));
 
-function updateStrengthUI(p) {
-  const dict = i18n[currentLang];
-  const s = getPasswordStrength(p);
-  const colors = ["#ff4d67", "#ff4d67", "#f6c453", "#4ade80", "#22c55e"];
-  const labels = [
-    "",
-    dict.strength.tooShort,
-    dict.strength.weak,
-    dict.strength.medium,
-    dict.strength.strong
-  ];
-
-  regStrengthBar.style.width = (s / 4) * 100 + "%";
-  regStrengthBar.style.background = colors[s];
-  regStrengthLabel.textContent = labels[s];
-  regStrengthLabel.style.color = colors[s];
-}
-
-function updateRegisterButtonState() {
-  const p1 = regPassword.value;
-  const p2 = regConfirmPassword.value;
-  const email = regEmail.value.trim();
-  const terms = regTerms.checked;
-  const strength = getPasswordStrength(p1);
-
-  const isValid = email.includes("@") && strength >= 3 && p1 === p2 && terms;
-  const btn = document.getElementById("registerButton");
-  if (isValid) {
-    btn.classList.add("enabled");
-  } else {
-    btn.classList.remove("enabled");
-  }
-}
-
-[regPassword, regConfirmPassword, regEmail, regTerms].forEach((el) => {
-  el.addEventListener("input", () => {
-    if (el === regPassword) updateStrengthUI(el.value);
-    updateRegisterButtonState();
-  });
-});
-
-// Password visibility
-function setupPasswordToggle(toggleId, inputId) {
-  const toggle = document.getElementById(toggleId);
-  const input = document.getElementById(inputId);
-  toggle.addEventListener("click", () => {
-    const isShowing = input.type === "text";
-    input.type = isShowing ? "password" : "text";
-    toggle.textContent = isShowing ? i18n[currentLang].show : i18n[currentLang].hide;
-  });
-}
-
-// REGISTER FLOW (Fix Modal Timing)
+// Registration
 registerForm.addEventListener("submit", async (e) => {
   e.preventDefault();
-  const btn = document.getElementById("registerButton");
-  if (!btn.classList.contains("enabled")) return;
-
-  const email = regEmail.value.trim();
-  const password = regPassword.value;
+  const dict = i18n[currentLang];
+  regMessages.textContent = "";
 
   try {
-    btn.disabled = true;
-    const res = await fetch("/api/auth/start-register", {
+    const res = await fetch("/api/auth/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password, lang: currentLang })
-    });
-    
-    if (res.ok) {
-      // ONLY OPEN MODAL IF SERVER SENDS SUCCESS
-      openVerifyModal(email); 
-    } else {
-      throw new Error();
-    }
-  } catch (err) {
-    regMessages.textContent = i18n[currentLang].regStartError;
-  } finally {
-    btn.disabled = false;
-  }
-});
-
-// VERIFICATION SUBMIT
-verifySubmit.addEventListener("click", async () => {
-  const code = verifyCodeInput.value.trim();
-  if (!code || !pendingRegisterEmail) return;
-
-  try {
-    verifySubmit.disabled = true;
-    const res = await fetch("/api/auth/verify-register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: pendingRegisterEmail, code })
+      body: JSON.stringify({ email: regEmail.value, password: regPassword.value, lang: currentLang })
     });
     const data = await res.json();
-    
     if (data.success) {
-      window.location.href = "dashboard.html";
+      window.location.href = `verify.html?email=${encodeURIComponent(regEmail.value)}&lang=${currentLang}`;
     } else {
-      verifyMessages.textContent = i18n[currentLang].regVerifyError;
+      regMessages.textContent = data.error || dict.regStartError;
     }
   } catch (err) {
-    verifyMessages.textContent = i18n[currentLang].regVerifyError;
-  } finally {
-    verifySubmit.disabled = false;
+    regMessages.textContent = dict.regStartError;
   }
 });
 
-// LOGIN FLOW
+// Login
 loginForm.addEventListener("submit", async (e) => {
   e.preventDefault();
   const dict = i18n[currentLang];
+  loginMessages.textContent = "";
+
   const email = loginEmail.value.trim();
   const password = loginPassword.value;
-
-  if (!email || !password) {
-    loginMessages.textContent = dict.loginInvalid;
-    return;
-  }
 
   try {
     const res = await fetch("/api/auth/login", {
@@ -469,7 +396,6 @@ loginForm.addEventListener("submit", async (e) => {
       body: JSON.stringify({ email, password })
     });
     const data = await res.json();
-    
     if (!data.success) {
       loginMessages.textContent = dict.loginError;
       return;
@@ -483,21 +409,25 @@ loginForm.addEventListener("submit", async (e) => {
 
     window.location.href = "dashboard.html";
   } catch (err) {
-    console.error(err);
     loginMessages.textContent = dict.loginError;
   }
 });
 
-// Forgot password
-const forgotPasswordBtn = document.getElementById("forgotPassword");
-forgotPasswordBtn.addEventListener("click", () => {
-  const dict = i18n[currentLang];
-  openModal(dict["login.forgot"], dict.forgotInfo);
-});
+// Password Toggles
+function setupPasswordToggle(toggleId, inputId) {
+  const toggle = document.getElementById(toggleId);
+  const input = document.getElementById(inputId);
+  if (!toggle || !input) return;
+
+  toggle.addEventListener("click", () => {
+    const isPwd = input.type === "password";
+    input.type = isPwd ? "text" : "password";
+    toggle.textContent = isPwd ? i18n[currentLang].hide : i18n[currentLang].show;
+  });
+}
 
 // Init
 function init() {
-  // Reset Modals
   modalBackdrop.hidden = true;
   termsBackdrop.hidden = true;
   verifyBackdrop.hidden = true;
@@ -515,13 +445,12 @@ function init() {
   } else {
     setActiveTab("register");
   }
-
+  
   updateStrengthUI("");
   updateRegisterButtonState();
 }
 
 document.addEventListener("DOMContentLoaded", init);
-
 setupPasswordToggle("regPasswordToggle", "regPassword");
 setupPasswordToggle("regConfirmPasswordToggle", "regConfirmPassword");
 setupPasswordToggle("loginPasswordToggle", "loginPassword");
