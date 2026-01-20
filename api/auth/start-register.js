@@ -68,7 +68,7 @@ export default async function handler(req, res) {
     const msg = messages[lang] || messages.en;
 
     const { error: emailError } = await resend.emails.send({
-      from: "Handwriting Platform <noreply@handwriting-platform.vercel.app>",
+      from: "Handwriting Platform <onboarding@resend.dev>",
       to: email,
       subject: msg.subject,
       html: msg.html(code, email)
