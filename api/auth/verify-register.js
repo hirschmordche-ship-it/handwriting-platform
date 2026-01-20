@@ -23,26 +23,19 @@ export default async function handler(req, res) {
       process.env.SUPABASE_SERVICE_ROLE_KEY
     );
 
-    // 1. Find pending registration
+    // 1. Find matching pending registration
     const { data: pending } = await supabase
       .from("pending_registrations")
       .select("*")
       .eq("email", email)
       .eq("code", code)
-      .eq("used", false)
       .maybeSingle();
 
     if (!pending) {
       return res.status(400).json({ success: false, error: "Invalid or expired code" });
     }
 
-    // 2. Mark pending registration as used
-    await supabase
-      .from("pending_registrations")
-      .update({ used: true })
-      .eq("id", pending.id);
-
-    // 3. Create user
+    // 2. Create user
     const { error: userError } = await supabase
       .from("users")
       .insert({
@@ -54,6 +47,12 @@ export default async function handler(req, res) {
     if (userError) {
       return res.status(500).json({ success: false, error: "User creation failed" });
     }
+
+    // 3. Delete all pending registrations for this email
+    await supabase
+      .from("pending_registrations")
+      .delete()
+      .eq("email", email);
 
     return res.status(200).json({ success: true });
 
