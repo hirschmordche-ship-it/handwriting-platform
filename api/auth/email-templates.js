@@ -1,5 +1,7 @@
 // api/auth/email-templates.js
 
+const BASE_URL = "https://handwriting-platform.vercel.app";
+
 const messages = {
   en: {
     subject: "Handwriting Platform – Verify Your Account",
@@ -42,7 +44,7 @@ const messages = {
 
           <p>Copy your code quickly:</p>
 
-          <a href="https://yourdomain.com/copy?code=${code}"
+          <a href="${BASE_URL}/copy?code=${code}"
              style="
                display:inline-block;
                padding:12px 20px;
@@ -58,7 +60,7 @@ const messages = {
 
           <p>Or verify instantly:</p>
 
-          <a href="https://yourdomain.com/verify?email=${encodeURIComponent(email)}&code=${code}"
+          <a href="${BASE_URL}/verify?email=${encodeURIComponent(email)}&code=${code}"
              style="
                display:inline-block;
                padding:12px 20px;
@@ -128,7 +130,7 @@ const messages = {
 
           <p>להעתקה מהירה של הקוד:</p>
 
-          <a href="https://yourdomain.com/copy?code=${code}"
+          <a href="${BASE_URL}/copy?code=${code}"
              style="
                display:inline-block;
                padding:12px 20px;
@@ -144,7 +146,7 @@ const messages = {
 
           <p>או אימות מיידי בלחיצה אחת:</p>
 
-          <a href="https://yourdomain.com/verify?email=${encodeURIComponent(email)}&code=${code}"
+          <a href="${BASE_URL}/verify?email=${encodeURIComponent(email)}&code=${code}"
              style="
                display:inline-block;
                padding:12px 20px;
