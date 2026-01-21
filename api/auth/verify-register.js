@@ -1,7 +1,5 @@
 // api/auth/verify-register.js
-export const config = {
-  runtime: "nodejs"
-};
+export const config = { runtime: "nodejs" };
 
 import { createClient } from "@supabase/supabase-js";
 
@@ -36,7 +34,6 @@ export default async function handler(req, res) {
         .from("pending_registrations")
         .delete()
         .eq("code", code);
-
       return res.status(400).json({ success: false });
     }
 
@@ -51,11 +48,9 @@ export default async function handler(req, res) {
       .delete()
       .eq("email", pending.email);
 
-    // --- Analytics ---
     console.log("[ANALYTICS] verification_success", pending.email);
 
     return res.status(200).json({ success: true });
-
   } catch (err) {
     console.error(err);
     return res.status(400).json({ success: false });
