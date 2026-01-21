@@ -315,7 +315,7 @@ body.dark-mode .lang-toggle-pill.lang-en span[data-lang="en"] {
 
 /* עבר active – pixel-precise fix */
 .lang-toggle-pill.lang-he .lang-toggle-thumb {
-  transform: translateX(40px) !important; 
+  transform: translateX(43px) !important; 
 }
 .lang-toggle-pill.lang-he span[data-lang="he"] {
   color: #0f172a;
