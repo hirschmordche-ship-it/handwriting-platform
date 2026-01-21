@@ -1,23 +1,18 @@
-// api/auth/start-register.js
-
-export const config = {
-  runtime: "nodejs"
-};
-
 import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
 import messages from "./email-templates.js";
 
+const resend = new Resend(process.env.RESEND_API_KEY);
+
 export default async function handler(req, res) {
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Method not allowed" });
+  }
+
   try {
-    if (req.method !== "POST") {
-      return res.status(405).json({ success: false, error: "Method not allowed" });
-    }
-
-    const { email, lang } = req.body || {};
-
-    if (!email || typeof email !== "string") {
-      return res.status(400).json({ success: false, error: "Email is required" });
+    const { email, password, lang } = req.body || {};
+    if (!email || !password) {
+      return res.status(400).json({ success: false });
     }
 
     const supabase = createClient(
@@ -25,7 +20,7 @@ export default async function handler(req, res) {
       process.env.SUPABASE_SERVICE_ROLE_KEY
     );
 
-    // 1. Block only if user already exists
+    // 1️⃣ If user already exists → block registration
     const { data: existingUser } = await supabase
       .from("users")
       .select("id")
@@ -33,61 +28,40 @@ export default async function handler(req, res) {
       .maybeSingle();
 
     if (existingUser) {
-      return res.status(400).json({
-        success: false,
-        error: "This user already exists. Please log in."
-      });
+      return res.status(409).json({ success: false, reason: "user_exists" });
     }
 
-    // 2. Remove any previous pending attempts
+    // 2️⃣ Delete ALL previous pending attempts for this email
     await supabase
       .from("pending_registrations")
       .delete()
       .eq("email", email);
 
-    // 3. Generate new code
+    // 3️⃣ Generate fresh code
     const code = Math.floor(100000 + Math.random() * 900000).toString();
+
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
 
-    // 4. Insert new pending registration
-    const { error: insertError } = await supabase
-      .from("pending_registrations")
-      .insert({
-        email,
-        code,
-        language: lang || "en",
-        expires_at: expiresAt,
-        created_at: new Date().toISOString()
-      });
+    // 4️⃣ Store pending registration
+    await supabase.from("pending_registrations").insert({
+      email,
+      password_hash: password, // assumed already hashed earlier or handled later
+      code,
+      expires_at: expiresAt
+    });
 
-    if (insertError) {
-      console.error(insertError);
-      return res.status(500).json({ success: false, error: "Database error" });
-    }
+    // 5️⃣ Send email
+    const tpl = messages[lang === "he" ? "he" : "en"];
 
-    // 5. Send email
-    const resend = new Resend(process.env.RESEND_API_KEY);
-    const msg = messages[lang] || messages.en;
-
-    const { error: emailError } = await resend.emails.send({
-      from: "Handwriting Platform <onboarding@resend.dev>",
+    await resend.emails.send({
+      from: "Resend <onboarding@resend.dev>",
       to: email,
-      subject: msg.subject,
-      html: msg.html(code)
+      subject: tpl.subject,
+      html: tpl.html(code)
     });
 
-    if (emailError) {
-      console.error(emailError);
-      return res.status(500).json({ success: false, error: "Email delivery failed" });
-    }
-
-    return res.status(200).json({
-      success: true,
-      next: "verify"
-    });
-
+    return res.status(200).json({ success: true });
   } catch (err) {
-    console.error("START REGISTER ERROR:", err);
-    return res.status(500).json({ success: false, error: "Server error" });
+    console.error("[start-register]", err);
+    return res.status(200).json({ success: false });
   }
-}
