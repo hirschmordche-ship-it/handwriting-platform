@@ -1,58 +1,59 @@
-// api/auth/verify-register.js
-export const config = { runtime: "nodejs" };
-
+import bcrypt from "bcryptjs";
 import { createClient } from "@supabase/supabase-js";
 
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
+
 export default async function handler(req, res) {
-  try {
-    if (req.method !== "POST") {
-      return res.status(405).json({ success: false });
-    }
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Method not allowed" });
+  }
 
-    const { code } = req.body || {};
-    if (!code) {
-      return res.status(400).json({ success: false });
-    }
+  const { email, code } = req.body || {};
+  if (!email || !code) {
+    return res.status(400).json({ error: "Missing fields" });
+  }
 
-    const supabase = createClient(
-      process.env.SUPABASE_URL,
-      process.env.SUPABASE_SERVICE_ROLE_KEY
-    );
+  const { data, error } = await supabase
+    .from("pending_registrations")
+    .select("*")
+    .eq("email", email)
+    .eq("code", code)
+    .single();
 
-    const { data: pending } = await supabase
-      .from("pending_registrations")
-      .select("*")
-      .eq("code", code)
-      .maybeSingle();
+  if (error || !data) {
+    return res.status(400).json({ error: "Invalid code" });
+  }
 
-    if (!pending) {
-      return res.status(400).json({ success: false });
-    }
-
-    if (new Date(pending.expires_at) < new Date()) {
-      await supabase
-        .from("pending_registrations")
-        .delete()
-        .eq("code", code);
-      return res.status(400).json({ success: false });
-    }
-
-    await supabase.from("users").insert({
-      email: pending.email,
-      language: pending.language,
-      created_at: new Date().toISOString()
-    });
-
+  if (new Date(data.expires_at) < new Date()) {
     await supabase
       .from("pending_registrations")
       .delete()
-      .eq("email", pending.email);
+      .eq("email", email);
 
-    console.log("[ANALYTICS] verification_success", pending.email);
-
-    return res.status(200).json({ success: true });
-  } catch (err) {
-    console.error(err);
-    return res.status(400).json({ success: false });
+    return res.status(400).json({ error: "Expired" });
   }
+
+  const hash = await bcrypt.hash(data.password_hash, 10);
+
+  const { error: insertUserError } = await supabase
+    .from("users")
+    .insert({
+      email,
+      password_hash: hash
+    });
+
+  if (insertUserError) {
+    console.error(insertUserError);
+    return res.status(500).json({ error: "User create failed" });
+  }
+
+  await supabase
+    .from("pending_registrations")
+    .delete()
+    .eq("email", email);
+
+  return res.status(200).json({ success: true });
 }
