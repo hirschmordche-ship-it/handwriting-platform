@@ -770,3 +770,89 @@ body.dark-mode .auth-header .active,
 body.dark-mode .auth-header .active * {
   color: #000 !important;
 }
+
+/* RESET FLOW UI */
+.reset-container {
+  margin-top: 20px;
+}
+
+.reset-title {
+  font-size: 0.95rem;
+  opacity: 0.8;
+  margin-bottom: 8px;
+}
+
+.reset-status {
+  font-size: 0.9rem;
+  margin-bottom: 12px;
+  opacity: 0.85;
+}
+
+.reset-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.reset-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.reset-back {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  padding: 6px 10px;
+  font-size: 0.8rem;
+  border-radius: 6px;
+  cursor: pointer;
+  opacity: 0.8;
+  transition: 0.2s;
+}
+
+.reset-back:hover {
+  opacity: 1;
+}
+
+.reset-resend {
+  background: none;
+  border: none;
+  color: var(--accent-color);
+  cursor: pointer;
+  opacity: 0.7;
+}
+
+.reset-resend:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.strength-meter {
+  height: 6px;
+  background: #ddd;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.strength-meter .bar {
+  height: 100%;
+  width: 0%;
+  background: red;
+  transition: width 0.3s, background 0.3s;
+}
+
+.password-wrapper {
+  position: relative;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  opacity: 0.7;
+}
