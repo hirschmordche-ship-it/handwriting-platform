@@ -414,17 +414,13 @@ function setLanguage(lang) {
   currentLang = lang;
 
   body.classList.remove("ltr", "rtl");
-  if (lang === "he") {
-    body.classList.add("rtl");
-    document.documentElement.lang = "he";
-    langToggle.classList.remove("lang-en");
-    langToggle.classList.add("lang-he");
-  } else {
-    body.classList.add("ltr");
-    document.documentElement.lang = "en";
-    langToggle.classList.remove("lang-he");
-    langToggle.classList.add("lang-en");
-  }
+    body.classList.remove("ltr", "rtl");
+  body.classList.add(lang === "he" ? "rtl" : "ltr");
+
+  document.documentElement.lang = lang === "he" ? "he" : "en";
+
+  langToggle.classList.toggle("lang-he", lang === "he");
+  langToggle.classList.toggle("lang-en", lang !== "he");
 
   const dict = i18n[lang];
 
