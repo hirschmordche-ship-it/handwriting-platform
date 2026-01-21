@@ -765,13 +765,8 @@ body.rtl .field-row {
   direction: ltr !important;
 }
 
-/* Dark mode: active tab text should be black */
-body.dark-mode .tab.active {
-  color: #000 !important;
-}
-
-/* If your tab uses a button or link inside */
-body.dark-mode .tab.active button,
-body.dark-mode .tab.active a {
+/* DARK MODE — force active tab text to black */
+body.dark-mode .active,
+body.dark-mode .active * {
   color: #000 !important;
 }
