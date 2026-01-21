@@ -766,7 +766,7 @@ body.rtl .field-row {
 }
 
 /* DARK MODE — force active tab text to black */
-body.dark-mode .active,
-body.dark-mode .active * {
+body.dark-mode .auth-header .active,
+body.dark-mode .auth-header .active * {
   color: #000 !important;
 }
