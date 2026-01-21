@@ -1,66 +1,94 @@
 import crypto from "crypto";
-import { Resend } from "resend";
-import { createClient } from "@supabase/supabase-js";
-
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
-
-const resend = new Resend(process.env.RESEND_API_KEY);
+import { getSupabaseClient } from "../_supabase.js";
+import { sendVerificationEmail } from "./email-templates.js";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const { email, password, lang } = req.body || {};
-  if (!email || !password) {
-    return res.status(400).json({ error: "Missing fields" });
-  }
+  try {
+    const { email, lang } = req.body;
 
-  // Invalidate any previous pending registrations for this email
-  await supabase
-    .from("pending_registrations")
-    .delete()
-    .eq("email", email);
+    if (!email || !email.includes("@")) {
+      return res.status(400).json({ error: "Invalid email" });
+    }
 
-  const code = crypto.randomInt(100000, 999999).toString();
-  const expiresAt = new Date(Date.now() + 3 * 60 * 1000); // 3 minutes
+    const supabase = getSupabaseClient();
 
-  const { error: insertError } = await supabase
-    .from("pending_registrations")
-    .insert({
-      email,
-      password_hash: password, // hashed later on verify
+    // 1️⃣ Check if user already exists (registered & verified)
+    const { data: existingUser, error: userErr } = await supabase
+      .from("users")
+      .select("id")
+      .eq("email", email)
+      .maybeSingle();
+
+    if (userErr) throw userErr;
+
+    if (existingUser) {
+      return res
+        .status(409)
+        .json({ error: "Account already exists" });
+    }
+
+    // 2️⃣ Check for existing pending registration
+    const { data: pending, error: pendingErr } = await supabase
+      .from("pending_registrations")
+      .select("*")
+      .eq("email", email)
+      .maybeSingle();
+
+    if (pendingErr) throw pendingErr;
+
+    let code;
+
+    if (pending) {
+      // 🔁 RESEND FLOW
+      // Reuse existing code if still valid
+      const expiresAt = new Date(pending.expires_at).getTime();
+      const now = Date.now();
+
+      if (expiresAt > now) {
+        code = pending.code;
+      } else {
+        // Expired → generate new code & update
+        code = crypto.randomInt(100000, 999999).toString();
+
+        const { error: updateErr } = await supabase
+          .from("pending_registrations")
+          .update({
+            code,
+            expires_at: new Date(Date.now() + 15 * 60 * 1000).toISOString()
+          })
+          .eq("email", email);
+
+        if (updateErr) throw updateErr;
+      }
+    } else {
+      // 🆕 FIRST REGISTER FLOW
+      code = crypto.randomInt(100000, 999999).toString();
+
+      const { error: insertErr } = await supabase
+        .from("pending_registrations")
+        .insert({
+          email,
+          code,
+          expires_at: new Date(Date.now() + 15 * 60 * 1000).toISOString()
+        });
+
+      if (insertErr) throw insertErr;
+    }
+
+    // 3️⃣ Send email (always)
+    await sendVerificationEmail({
+      to: email,
       code,
-      expires_at: expiresAt
+      lang: lang === "he" ? "he" : "en"
     });
 
-  if (insertError) {
-    console.error(insertError);
-    return res.status(500).json({ error: "DB error" });
+    return res.json({ success: true });
+  } catch (err) {
+    console.error("start-register error:", err);
+    return res.status(500).json({ error: "Internal error" });
   }
-
-  const subject =
-    lang === "he" ? "קוד אימות" : "Your verification code";
-
-  const html =
-    lang === "he"
-      ? `<p>קוד האימות שלך:</p><h2>${code}</h2><p>בתוקף ל-3 דקות</p>`
-      : `<p>Your verification code:</p><h2>${code}</h2><p>Valid for 3 minutes</p>`;
-
-  const { error: mailError } = await resend.emails.send({
-    from: process.env.VERIFICATION_EMAIL_FROM,
-    to: email,
-    subject,
-    html
-  });
-
-  if (mailError) {
-    console.error(mailError);
-    return res.status(500).json({ error: "Email failed" });
-  }
-
-  return res.status(200).json({ success: true });
 }
