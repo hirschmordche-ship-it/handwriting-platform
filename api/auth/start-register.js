@@ -1,22 +1,28 @@
+import bcrypt from "bcryptjs";
 import crypto from "crypto";
-import { getSupabaseClient } from "../_supabase.js";
+import { createClient } from "@supabase/supabase-js";
 import { sendVerificationEmail } from "./email-templates.js";
+
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method not allowed" });
+    return res.status(405).json({ success: false });
+  }
+
+  const { email, password, lang } = req.body;
+
+  if (!email || !password) {
+    return res.status(400).json({ success: false });
   }
 
   try {
-    const { email, lang } = req.body;
-
-    if (!email || !email.includes("@")) {
-      return res.status(400).json({ error: "Invalid email" });
-    }
-
-    const supabase = getSupabaseClient();
-
-    // 1️⃣ Check if user already exists (registered & verified)
+    /* ----------------------------------------------------
+       1. Check if VERIFIED user already exists
+    ---------------------------------------------------- */
     const { data: existingUser, error: userErr } = await supabase
       .from("users")
       .select("id")
@@ -26,69 +32,51 @@ export default async function handler(req, res) {
     if (userErr) throw userErr;
 
     if (existingUser) {
-      return res
-        .status(409)
-        .json({ error: "Account already exists" });
+      return res.status(400).json({
+        success: false,
+        error: "Account already exists. Please log in."
+      });
     }
 
-    // 2️⃣ Check for existing pending registration
-    const { data: pending, error: pendingErr } = await supabase
+    /* ----------------------------------------------------
+       2. Delete ANY previous pending registration
+       (restart is allowed)
+    ---------------------------------------------------- */
+    await supabase
       .from("pending_registrations")
-      .select("*")
-      .eq("email", email)
-      .maybeSingle();
+      .delete()
+      .eq("email", email);
 
-    if (pendingErr) throw pendingErr;
+    /* ----------------------------------------------------
+       3. Create new pending registration
+    ---------------------------------------------------- */
+    const passwordHash = await bcrypt.hash(password, 10);
+    const code = crypto.randomInt(100000, 999999).toString();
 
-    let code;
+    const expiresAt = new Date(Date.now() + 3 * 60 * 1000); // 3 minutes
 
-    if (pending) {
-      // 🔁 RESEND FLOW
-      // Reuse existing code if still valid
-      const expiresAt = new Date(pending.expires_at).getTime();
-      const now = Date.now();
+    const { error: insertErr } = await supabase
+      .from("pending_registrations")
+      .insert({
+        email,
+        password_hash: passwordHash,
+        code,
+        expires_at: expiresAt
+      });
 
-      if (expiresAt > now) {
-        code = pending.code;
-      } else {
-        // Expired → generate new code & update
-        code = crypto.randomInt(100000, 999999).toString();
+    if (insertErr) throw insertErr;
 
-        const { error: updateErr } = await supabase
-          .from("pending_registrations")
-          .update({
-            code,
-            expires_at: new Date(Date.now() + 15 * 60 * 1000).toISOString()
-          })
-          .eq("email", email);
-
-        if (updateErr) throw updateErr;
-      }
-    } else {
-      // 🆕 FIRST REGISTER FLOW
-      code = crypto.randomInt(100000, 999999).toString();
-
-      const { error: insertErr } = await supabase
-        .from("pending_registrations")
-        .insert({
-          email,
-          code,
-          expires_at: new Date(Date.now() + 15 * 60 * 1000).toISOString()
-        });
-
-      if (insertErr) throw insertErr;
-    }
-
-    // 3️⃣ Send email (always)
-    await sendVerificationEmail({
-      to: email,
-      code,
-      lang: lang === "he" ? "he" : "en"
-    });
+    /* ----------------------------------------------------
+       4. Send email
+    ---------------------------------------------------- */
+    await sendVerificationEmail(email, code, lang);
 
     return res.json({ success: true });
   } catch (err) {
     console.error("start-register error:", err);
-    return res.status(500).json({ error: "Internal error" });
+    return res.status(500).json({
+      success: false,
+      error: "Registration failed"
+    });
   }
 }
