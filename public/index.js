@@ -739,3 +739,57 @@ document.addEventListener("DOMContentLoaded", init);
 setupPasswordToggle("regPasswordToggle", "regPassword");
 setupPasswordToggle("regConfirmPasswordToggle", "regConfirmPassword");
 setupPasswordToggle("loginPasswordToggle", "loginPassword");
+
+/**
+ * Auto-detect return from email and auto-fill verification code
+ */
+const handleEmailVerificationReturn = async () => {
+  const urlParams = new URLSearchParams(window.location.search);
+
+  // 1. Detect if the user was sent back from the copy-handler bridge page
+  if (urlParams.get('verify') === 'true') {
+    
+    // Replace 'openRegisterPopup' with the exact name of the function 
+    // in your index.js that shows the registration/verification modal.
+    if (typeof openRegisterPopup === 'function') {
+      openRegisterPopup();
+    }
+
+    // 2. Attempt to auto-fill the code field
+    // Give the popup a tiny bit of time to render (500ms)
+    setTimeout(async () => {
+      // Replace 'verification-input' with the actual ID of your input field
+      const inputField = document.getElementById('verification-input');
+      if (!inputField) return;
+
+      try {
+        // A. Try reading from the clipboard first
+        const text = await navigator.clipboard.readText();
+        if (/^\d{6}$/.test(text.trim())) {
+          inputField.value = text.trim();
+          console.log("Auto-pasted code from clipboard.");
+        } else {
+          // B. Fallback: Try reading from localStorage (if bridge page saved it)
+          const backupCode = localStorage.getItem('pending_verification_code');
+          if (backupCode) {
+            inputField.value = backupCode;
+            localStorage.removeItem('pending_verification_code'); // Clean up
+          }
+        }
+      } catch (err) {
+        // C. Final Fallback for browsers that block clipboard access without click
+        const backupCode = localStorage.getItem('pending_verification_code');
+        if (backupCode) {
+          inputField.value = backupCode;
+          localStorage.removeItem('pending_verification_code');
+        }
+      }
+    }, 500);
+  }
+};
+
+// Run on initial page load
+window.addEventListener('DOMContentLoaded', handleEmailVerificationReturn);
+
+// Run if the user switches back to the tab from their email app
+window.addEventListener('focus', handleEmailVerificationReturn);
