@@ -19,6 +19,18 @@ export default async function handler(req, res) {
       process.env.SUPABASE_URL,
       process.env.SUPABASE_SERVICE_ROLE_KEY
     );
+    
+    
+    // 1️⃣ If user already exists → block registration
+    const { data: existingUser } = await supabase
+      .from("users")
+      .select("id")
+      .eq("email", email)
+      .maybeSingle();
+
+    if (existingUser) {
+      return res.status(409).json({ success: false, reason: "user_exists" });
+    }
 
     // 2️⃣ Delete ALL previous pending attempts for this email
     await supabase
