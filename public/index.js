@@ -2,9 +2,14 @@
 let currentLang = "en";
 let pendingRegisterEmail = "";
 
-// ADDED: resend cooldown
+// ADDED: resend cooldown (register)
 let resendTimerInterval = null;
 let resendSecondsLeft = 0;
+
+// ADDED: reset flow state
+let resetFlowStep = "START";
+let resetCooldownInterval = null;
+let resetSecondsLeft = 0;
 
 // i18n dictionary
 const i18n = {
@@ -56,6 +61,22 @@ const i18n = {
     loginError: "Login failed. Please check your details.",
     spamHint: "Check your spam folder if you don’t see the email.",
     resend: "Resend code",
+
+    // RESET FLOW
+    resetInitTitle: "Forgot password?",
+    resetInitButton: "Securely Reset via Email",
+    resetStatusStart: "Enter your email for a verification code.",
+    resetStatusSent: "Code sent! Enter it and your new password.",
+    resetEmailPlaceholder: "Email Address",
+    resetCodePlaceholder: "6-Digit Code",
+    resetNewPasswordPlaceholder: "New Password",
+    resetConfirmPasswordPlaceholder: "Confirm Password",
+    resetSendCode: "Send Reset Code",
+    resetUpdateLogin: "Update & Login",
+    resetReturn: "Return to Login",
+    sending: "Sending...",
+    tryAgain: "Try Again",
+    invalidCode: "Invalid or expired code",
 
     "footer.text": `Need help? Contact us <a href="contactus.html">here</a>`,
 
@@ -125,6 +146,22 @@ If you have questions, issues, or need assistance, you can reach us through our 
     spamHint: "בדוק גם בתיקיית הספאם.",
     resend: "שלח קוד שוב",
 
+    // RESET FLOW
+    resetInitTitle: "שכחת סיסמה?",
+    resetInitButton: "איפוס מאובטח דרך אימייל",
+    resetStatusStart: "הזן את האימייל לקבלת קוד אימות.",
+    resetStatusSent: "הקוד נשלח! הזן אותו וסיסמה חדשה.",
+    resetEmailPlaceholder: "כתובת אימייל",
+    resetCodePlaceholder: "קוד בן 6 ספרות",
+    resetNewPasswordPlaceholder: "סיסמה חדשה",
+    resetConfirmPasswordPlaceholder: "אימות סיסמה",
+    resetSendCode: "שלח קוד איפוס",
+    resetUpdateLogin: "עדכן והתחבר",
+    resetReturn: "חזרה להתחברות",
+    sending: "שולח...",
+    tryAgain: "נסה שוב",
+    invalidCode: "קוד שגוי או שפג תוקפו",
+
     "footer.text": `צריך עזרה? צרו קשר <a href="contactus.html">כאן</a>`,
 
     "terms.full": `
@@ -169,6 +206,22 @@ const regTerms = document.getElementById("regTerms");
 const regEmail = document.getElementById("regEmail");
 const loginEmail = document.getElementById("loginEmail");
 const rememberMe = document.getElementById("rememberMe");
+
+// RESET DOM references
+const resetInitView = document.getElementById("reset-init-view");
+const resetFormView = document.getElementById("reset-form-view");
+const resetStatusMsg = document.getElementById("reset-status-msg");
+const resetEmailInput = document.getElementById("reset-email");
+const resetCodeInput = document.getElementById("reset-code");
+const resetPasswordWrapper = document.getElementById("reset-password-wrapper");
+const resetNewPassword = document.getElementById("reset-new-password");
+const resetConfirmPassword = document.getElementById("reset-confirm-password");
+const resetMainBtn = document.getElementById("reset-main-btn");
+const resetBackBtn = document.getElementById("reset-back-btn");
+const resetResendWrapper = document.getElementById("reset-resend-wrapper");
+const resetResendBtn = document.getElementById("reset-resend-btn");
+const resetResendCountdown = document.getElementById("reset-resend-countdown");
+const resetStrength = document.getElementById("reset-strength");
 
 // Modals
 const modalBackdrop = document.getElementById("modalBackdrop");
@@ -261,7 +314,7 @@ verifyBackdrop.addEventListener("click", (e) => {
   if (e.target === verifyBackdrop) closeVerifyModal();
 });
 
-// ---------- RESEND ----------
+// ---------- RESEND (REGISTER) ----------
 function startResendCooldown() {
   // 3 minutes cooldown
   resendSecondsLeft = 180;
@@ -296,7 +349,6 @@ if (resendBtn) {
     if (resendSecondsLeft > 0) return;
     if (!pendingRegisterEmail) return;
 
-    // Attempt to resend using start-register endpoint
     try {
       await fetch("/api/auth/start-register", {
         method: "POST",
@@ -308,7 +360,6 @@ if (resendBtn) {
         })
       });
     } catch (err) {
-      // ignore network errors here; user can try again after cooldown
       console.error("Resend failed", err);
     } finally {
       startResendCooldown();
@@ -316,7 +367,7 @@ if (resendBtn) {
   });
 }
 
-// ---------- AUTO SUBMIT ON 6 DIGITS ----------
+// ---------- AUTO SUBMIT ON 6 DIGITS (REGISTER VERIFY) ----------
 if (verifyCodeInput) {
   verifyCodeInput.addEventListener("input", () => {
     verifyMessages.textContent = "";
@@ -326,7 +377,7 @@ if (verifyCodeInput) {
   });
 }
 
-// ---------- VERIFY ----------
+// ---------- VERIFY REGISTER ----------
 verifySubmit.addEventListener("click", async () => {
   const dict = i18n[currentLang];
   verifyMessages.textContent = "";
@@ -356,10 +407,8 @@ verifySubmit.addEventListener("click", async () => {
       return;
     }
 
-    // SUCCESS ANIMATION
     verifyBackdrop.classList.add("verify-success");
     setTimeout(() => {
-      // Redirect to dashboard as requested (option B)
       window.location.href = "dashboard.html";
     }, 900);
 
@@ -414,7 +463,6 @@ function setLanguage(lang) {
   currentLang = lang;
 
   body.classList.remove("ltr", "rtl");
-    body.classList.remove("ltr", "rtl");
   body.classList.add(lang === "he" ? "rtl" : "ltr");
 
   document.documentElement.lang = lang === "he" ? "he" : "en";
@@ -457,6 +505,20 @@ function setLanguage(lang) {
     footer.innerHTML = dict["footer.text"];
   }
 
+  // RESET UI dynamic text
+  if (resetStatusMsg) {
+    resetStatusMsg.textContent =
+      resetFlowStep === "START"
+        ? dict.resetStatusStart
+        : dict.resetStatusSent;
+  }
+  if (resetMainBtn) {
+    resetMainBtn.textContent =
+      resetFlowStep === "START"
+        ? dict.resetSendCode
+        : dict.resetUpdateLogin;
+  }
+
   localStorage.setItem("authLang", lang);
 }
 
@@ -490,20 +552,16 @@ function evaluatePassword(password) {
   let score = 0;
   const missing = [];
 
-  // Length (max 50%)
   const lengthScore = Math.min(password.length, minLength) / minLength;
   score += lengthScore * 50;
   if (password.length < minLength) missing.push("length");
 
-  // Number (20%)
   if (hasNumber) score += 20;
   else missing.push("number");
 
-  // Symbol (20%)
   if (hasSymbol) score += 20;
   else missing.push("symbol");
 
-  // Uppercase (10%)
   if (hasEnglish && hasUppercase) score += 10;
   else if (hasEnglish) missing.push("uppercase");
 
@@ -516,7 +574,7 @@ function evaluatePassword(password) {
   };
 }
 
-// ---------- STRENGTH UI ----------
+// ---------- STRENGTH UI (REGISTER) ----------
 function updateStrengthUI(password) {
   const dict = i18n[currentLang].strength;
   const result = evaluatePassword(password);
@@ -553,7 +611,6 @@ function updateStrengthUI(password) {
   regStrengthBar.style.background = color;
   regStrengthLabel.textContent = label;
 
-  // Live checklist above the bar
   if (reqBox) {
     if (score === 100) {
       reqBox.textContent = "";
@@ -699,12 +756,247 @@ loginForm.addEventListener("submit", async (e) => {
   }
 });
 
-// ---------- FORGOT PASSWORD ----------
+// ---------- FORGOT PASSWORD → OPEN RESET UI ----------
 const forgotPasswordBtn = document.getElementById("forgotPassword");
 if (forgotPasswordBtn) {
   forgotPasswordBtn.addEventListener("click", () => {
-    const dict = i18n[currentLang];
-    openModal(dict["login.forgot"], dict.forgotInfo);
+    toggleResetUI(true);
+  });
+}
+
+// ---------- RESET FLOW ----------
+
+function resetToStartState() {
+  resetFlowStep = "START";
+  if (resetEmailInput) resetEmailInput.style.display = "block";
+  if (resetCodeInput) {
+    resetCodeInput.style.display = "none";
+    resetCodeInput.value = "";
+  }
+  if (resetPasswordWrapper) {
+    resetPasswordWrapper.style.display = "none";
+    if (resetNewPassword) resetNewPassword.value = "";
+    if (resetConfirmPassword) resetConfirmPassword.value = "";
+  }
+  if (resetResendWrapper) resetResendWrapper.style.display = "none";
+  if (resetResendCountdown) resetResendCountdown.textContent = "";
+  if (resetResendBtn) resetResendBtn.disabled = true;
+
+  const dict = i18n[currentLang];
+  if (resetStatusMsg) resetStatusMsg.textContent = dict.resetStatusStart;
+  if (resetMainBtn) resetMainBtn.textContent = dict.resetSendCode;
+
+  if (resetCooldownInterval) {
+    clearInterval(resetCooldownInterval);
+    resetCooldownInterval = null;
+  }
+}
+
+function toggleResetUI(show) {
+  if (!resetInitView || !resetFormView) return;
+
+  // Show reset UI, hide login form
+  if (show) {
+    setActiveTab("login"); // keep login tab active visually
+    loginForm.classList.remove("active");
+    resetInitView.style.display = "none";
+    resetFormView.style.display = "block";
+    resetToStartState();
+    if (resetEmailInput && loginEmail) {
+      resetEmailInput.value = loginEmail.value;
+    }
+  } else {
+    resetFormView.style.display = "none";
+    resetInitView.style.display = "none";
+    loginForm.classList.add("active");
+    resetToStartState();
+  }
+}
+
+async function executeResetFlow() {
+  const dict = i18n[currentLang];
+  if (!resetEmailInput || !resetMainBtn || !resetStatusMsg) return;
+
+  const email = resetEmailInput.value.trim();
+  const btn = resetMainBtn;
+  const msg = resetStatusMsg;
+
+  if (!email) return;
+
+  if (resetFlowStep === "START") {
+    btn.textContent = dict.sending;
+
+    const res = await fetch("/api/auth/start-reset", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, lang: currentLang })
+    });
+
+    if (res.ok) {
+      resetFlowStep = "VERIFY";
+
+      msg.textContent = dict.resetStatusSent;
+
+      resetEmailInput.style.display = "none";
+      if (resetCodeInput) resetCodeInput.style.display = "block";
+      if (resetPasswordWrapper) resetPasswordWrapper.style.display = "block";
+
+      btn.textContent = dict.resetUpdateLogin;
+
+      startResetCooldown();
+    } else {
+      btn.textContent = dict.tryAgain;
+    }
+  } else {
+    if (!resetCodeInput || !resetNewPassword || !resetConfirmPassword) return;
+
+    const code = resetCodeInput.value.trim();
+    const newPassword = resetNewPassword.value;
+    const confirm = resetConfirmPassword.value;
+
+    if (!code || !newPassword || newPassword !== confirm) return;
+
+    const evaluation = evaluatePassword(newPassword);
+    if (!evaluation.valid) {
+      msg.textContent = dict.regPasswordInvalid;
+      return;
+    }
+
+    const res = await fetch("/api/auth/verify-reset", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, code, newPassword })
+    });
+
+    const data = await res.json();
+    if (data.success) {
+      window.location.href = "dashboard.html";
+    } else {
+      msg.textContent = data.reason || dict.invalidCode;
+    }
+  }
+}
+
+// Auto-submit reset code on 6 digits
+if (resetCodeInput) {
+  resetCodeInput.addEventListener("input", (e) => {
+    if (/^\d{6}$/.test(e.target.value)) {
+      executeResetFlow();
+    }
+  });
+
+  resetCodeInput.addEventListener("paste", (e) => {
+    const text = (e.clipboardData || window.clipboardData).getData("text");
+    if (/^\d{6}$/.test(text.trim())) {
+      e.preventDefault();
+      e.target.value = text.trim();
+      executeResetFlow();
+    }
+  });
+}
+
+// Strength meter for reset (same rules as register)
+if (resetNewPassword && resetStrength) {
+  const resetBar = resetStrength.querySelector(".bar");
+  const resetReqBoxId = "resetPasswordRequirements";
+
+  // create requirements box dynamically if you want, or reuse same logic
+  resetNewPassword.addEventListener("input", (e) => {
+    const password = e.target.value;
+    const dictStrength = i18n[currentLang].strength;
+    const result = evaluatePassword(password);
+    const score = result.score;
+
+    if (resetBar) {
+      if (!password) {
+        resetBar.style.width = "0";
+        resetBar.style.background = "transparent";
+      } else {
+        let color = "var(--danger)";
+        if (score === 100) color = "var(--success)";
+        else if (score <= 33) color = "var(--danger)";
+        else if (score <= 66) color = "var(--warning)";
+        else color = "var(--success)";
+
+        resetBar.style.width = score + "%";
+        resetBar.style.background = color;
+      }
+    }
+
+    // Optional: separate requirements box for reset
+    let reqBox = document.getElementById(resetReqBoxId);
+    if (!reqBox) {
+      reqBox = document.createElement("div");
+      reqBox.id = resetReqBoxId;
+      reqBox.className = "password-help";
+      resetStrength.insertAdjacentElement("beforebegin", reqBox);
+    }
+
+    if (!password) {
+      reqBox.textContent = "";
+      return;
+    }
+
+    if (score === 100) {
+      reqBox.textContent = "";
+    } else {
+      const hints = {
+        length: currentLang === "he" ? "אורך" : "length",
+        number: currentLang === "he" ? "מספר" : "number",
+        symbol: currentLang === "he" ? "סימן" : "symbol",
+        uppercase: currentLang === "he" ? "אות גדולה" : "uppercase"
+      };
+
+      const missingText = result.missing.map(k => hints[k]).join(", ");
+      reqBox.textContent =
+        (currentLang === "he" ? "חסר: " : "Missing: ") + missingText;
+    }
+  });
+
+  if (resetConfirmPassword) {
+    resetConfirmPassword.addEventListener("input", () => {
+      // no button state here, but we could add visual mismatch indicator if needed
+    });
+  }
+}
+
+// Resend cooldown for reset
+function startResetCooldown() {
+  if (!resetResendWrapper || !resetResendBtn || !resetResendCountdown) return;
+
+  resetResendWrapper.style.display = "block";
+  resetSecondsLeft = 180;
+  resetResendBtn.disabled = true;
+
+  resetResendCountdown.textContent = `${resetSecondsLeft}s`;
+
+  if (resetCooldownInterval) clearInterval(resetCooldownInterval);
+  resetCooldownInterval = setInterval(() => {
+    resetSecondsLeft--;
+    resetResendCountdown.textContent = `${resetSecondsLeft}s`;
+
+    if (resetSecondsLeft <= 0) {
+      clearInterval(resetCooldownInterval);
+      resetCooldownInterval = null;
+      resetResendBtn.disabled = false;
+      resetResendCountdown.textContent = "";
+    }
+  }, 1000);
+}
+
+if (resetResendBtn) {
+  resetResendBtn.addEventListener("click", async () => {
+    if (!resetEmailInput) return;
+    const email = resetEmailInput.value.trim();
+    if (!email) return;
+
+    await fetch("/api/auth/start-reset", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, lang: currentLang })
+    });
+
+    startResetCooldown();
   });
 }
 
@@ -728,7 +1020,6 @@ function init() {
     setActiveTab("register");
   }
 
-  // Initialize strength UI + button state
   updateStrengthUI("");
   updateRegisterButtonState();
 }
@@ -740,44 +1031,49 @@ setupPasswordToggle("regPasswordToggle", "regPassword");
 setupPasswordToggle("regConfirmPasswordToggle", "regConfirmPassword");
 setupPasswordToggle("loginPasswordToggle", "loginPassword");
 
+// Also apply toggle behavior to reset password fields (they use data-target only)
+document.querySelectorAll(".password-toggle").forEach(btn => {
+  const targetId = btn.getAttribute("data-target");
+  if (!targetId) return;
+  const input = document.getElementById(targetId);
+  if (!input) return;
+
+  btn.addEventListener("click", () => {
+    const dict = i18n[currentLang];
+    const isHidden = input.type === "password";
+    input.type = isHidden ? "text" : "password";
+    btn.textContent = isHidden ? dict.hide : dict.show;
+  });
+});
+
 /**
  * Auto-detect return from email and auto-fill verification code
  */
 const handleEmailVerificationReturn = async () => {
   const urlParams = new URLSearchParams(window.location.search);
 
-  // 1. Detect if the user was sent back from the copy-handler bridge page
   if (urlParams.get('verify') === 'true') {
-    
-    // Replace 'openRegisterPopup' with the exact name of the function 
-    // in your index.js that shows the registration/verification modal.
     if (typeof openRegisterPopup === 'function') {
       openRegisterPopup();
     }
 
-    // 2. Attempt to auto-fill the code field
-    // Give the popup a tiny bit of time to render (500ms)
     setTimeout(async () => {
-      // Replace 'verification-input' with the actual ID of your input field
       const inputField = document.getElementById('verification-input');
       if (!inputField) return;
 
       try {
-        // A. Try reading from the clipboard first
         const text = await navigator.clipboard.readText();
         if (/^\d{6}$/.test(text.trim())) {
           inputField.value = text.trim();
           console.log("Auto-pasted code from clipboard.");
         } else {
-          // B. Fallback: Try reading from localStorage (if bridge page saved it)
           const backupCode = localStorage.getItem('pending_verification_code');
           if (backupCode) {
             inputField.value = backupCode;
-            localStorage.removeItem('pending_verification_code'); // Clean up
+            localStorage.removeItem('pending_verification_code');
           }
         }
       } catch (err) {
-        // C. Final Fallback for browsers that block clipboard access without click
         const backupCode = localStorage.getItem('pending_verification_code');
         if (backupCode) {
           inputField.value = backupCode;
@@ -788,8 +1084,5 @@ const handleEmailVerificationReturn = async () => {
   }
 };
 
-// Run on initial page load
 window.addEventListener('DOMContentLoaded', handleEmailVerificationReturn);
-
-// Run if the user switches back to the tab from their email app
 window.addEventListener('focus', handleEmailVerificationReturn);
