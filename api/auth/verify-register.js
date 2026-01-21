@@ -16,37 +16,47 @@ export default async function handler(req, res) {
       process.env.SUPABASE_SERVICE_ROLE_KEY
     );
 
-    // 1️⃣ Fetch pending registration deterministically
-    const { data: rows, error } = await supabase
+    // 1️⃣ Fetch pending registration
+    const { data: rows, error: fetchError } = await supabase
       .from("pending_registrations")
       .select("*")
       .eq("email", email)
       .eq("code", code)
       .limit(1);
 
-    if (error || !rows || rows.length === 0) {
-      return res.status(200).json({ success: false });
+    if (fetchError || !rows || rows.length === 0) {
+      return res.status(200).json({ success: false, reason: "invalid_code" });
     }
 
     const pending = rows[0];
 
     // 2️⃣ Expiry check
     if (new Date(pending.expires_at) < new Date()) {
-      await supabase
-        .from("pending_registrations")
-        .delete()
-        .eq("email", email);
-
-      return res.status(200).json({ success: false });
+      await supabase.from("pending_registrations").delete().eq("email", email);
+      return res.status(200).json({ success: false, reason: "expired" });
     }
 
-    // 3️⃣ Create user
-    await supabase.from("users").insert({
+    // 3️⃣ Create user in Supabase Auth (The "Real" Registration)
+    // This allows the user to actually sign in via supabase.auth.signInWithPassword
+    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
       email: pending.email,
-      password_hash: pending.password_hash
+      password: pending.password_hash, // Pass the text you stored earlier
+      email_confirm: true // This marks them as verified immediately
     });
 
-    // 4️⃣ Cleanup pending record
+    if (authError) {
+      console.error("Auth creation error:", authError.message);
+      return res.status(200).json({ success: false, reason: authError.message });
+    }
+
+    // 4️⃣ (Optional) Insert into your public users table if you need extra profile data
+    await supabase.from("users").insert({
+      id: authData.user.id, // Link to the Auth ID
+      email: pending.email,
+      password_hash: pending.password_hash // Only if you strictly need it here too
+    });
+
+    // 5️⃣ Cleanup pending record
     await supabase
       .from("pending_registrations")
       .delete()
@@ -54,7 +64,7 @@ export default async function handler(req, res) {
 
     return res.status(200).json({ success: true });
   } catch (err) {
-    console.error("[verify-register]", err);
+    console.error("[verify-register-catch]", err);
     return res.status(200).json({ success: false });
   }
 }
