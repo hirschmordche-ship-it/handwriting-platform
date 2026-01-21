@@ -1,82 +1,93 @@
-import bcrypt from "bcryptjs";
-import crypto from "crypto";
-import { createClient } from "@supabase/supabase-js";
-import { sendVerificationEmail } from "./email-templates.js";
+// api/auth/start-register.js
 
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+export const config = {
+  runtime: "nodejs"
+};
+
+import { createClient } from "@supabase/supabase-js";
+import { Resend } from "resend";
+import messages from "./email-templates.js";
 
 export default async function handler(req, res) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ success: false });
-  }
-
-  const { email, password, lang } = req.body;
-
-  if (!email || !password) {
-    return res.status(400).json({ success: false });
-  }
-
   try {
-    /* ----------------------------------------------------
-       1. Check if VERIFIED user already exists
-    ---------------------------------------------------- */
-    const { data: existingUser, error: userErr } = await supabase
+    if (req.method !== "POST") {
+      return res.status(405).json({ success: false, error: "Method not allowed" });
+    }
+
+    const { email, lang } = req.body || {};
+
+    if (!email || typeof email !== "string") {
+      return res.status(400).json({ success: false, error: "Email is required" });
+    }
+
+    const supabase = createClient(
+      process.env.SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_ROLE_KEY
+    );
+
+    // 1. Block only if user already exists
+    const { data: existingUser } = await supabase
       .from("users")
       .select("id")
       .eq("email", email)
       .maybeSingle();
 
-    if (userErr) throw userErr;
-
     if (existingUser) {
       return res.status(400).json({
         success: false,
-        error: "Account already exists. Please log in."
+        error: "This user already exists. Please log in."
       });
     }
 
-    /* ----------------------------------------------------
-       2. Delete ANY previous pending registration
-       (restart is allowed)
-    ---------------------------------------------------- */
+    // 2. Remove any previous pending attempts
     await supabase
       .from("pending_registrations")
       .delete()
       .eq("email", email);
 
-    /* ----------------------------------------------------
-       3. Create new pending registration
-    ---------------------------------------------------- */
-    const passwordHash = await bcrypt.hash(password, 10);
-    const code = crypto.randomInt(100000, 999999).toString();
+    // 3. Generate new code
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
 
-    const expiresAt = new Date(Date.now() + 3 * 60 * 1000); // 3 minutes
-
-    const { error: insertErr } = await supabase
+    // 4. Insert new pending registration
+    const { error: insertError } = await supabase
       .from("pending_registrations")
       .insert({
         email,
-        password_hash: passwordHash,
         code,
-        expires_at: expiresAt
+        language: lang || "en",
+        expires_at: expiresAt,
+        created_at: new Date().toISOString()
       });
 
-    if (insertErr) throw insertErr;
+    if (insertError) {
+      console.error(insertError);
+      return res.status(500).json({ success: false, error: "Database error" });
+    }
 
-    /* ----------------------------------------------------
-       4. Send email
-    ---------------------------------------------------- */
-    await sendVerificationEmail(email, code, lang);
+    // 5. Send email
+    const resend = new Resend(process.env.RESEND_API_KEY);
+    const msg = messages[lang] || messages.en;
 
-    return res.json({ success: true });
-  } catch (err) {
-    console.error("start-register error:", err);
-    return res.status(500).json({
-      success: false,
-      error: "Registration failed"
+    const { error: emailError } = await resend.emails.send({
+      from: "Handwriting Platform <onboarding@resend.dev>",
+      to: email,
+      subject: msg.subject,
+      html: msg.html(code)
     });
+
+    if (emailError) {
+      console.error(emailError);
+      return res.status(500).json({ success: false, error: "Email delivery failed" });
+    }
+
+    return res.status(200).json({
+      success: true,
+      next: "verify"
+    });
+
+  } catch (err) {
+    console.error("START REGISTER ERROR:", err);
+    return res.status(500).json({ success: false, error: "Server error" });
   }
 }
