@@ -1,5 +1,4 @@
 // api/auth/start-register.js
-
 export const config = {
   runtime: "nodejs"
 };
@@ -8,16 +7,36 @@ import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
 import messages from "./email-templates.js";
 
+const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000;
+const RATE_LIMIT_MAX = 5;
+const rateMap = new Map();
+
 export default async function handler(req, res) {
   try {
     if (req.method !== "POST") {
-      return res.status(405).json({ success: false, error: "Method not allowed" });
+      return res.status(405).json({ success: false });
     }
 
     const { email, lang } = req.body || {};
-
     if (!email || typeof email !== "string") {
-      return res.status(400).json({ success: false, error: "Email is required" });
+      return res.status(200).json({ success: true });
+    }
+
+    // --- Rate limiting (per IP) ---
+    const ip = req.headers["x-forwarded-for"] || "unknown";
+    const now = Date.now();
+    const entry = rateMap.get(ip) || { count: 0, start: now };
+
+    if (now - entry.start > RATE_LIMIT_WINDOW_MS) {
+      entry.count = 0;
+      entry.start = now;
+    }
+
+    entry.count++;
+    rateMap.set(ip, entry);
+
+    if (entry.count > RATE_LIMIT_MAX) {
+      return res.status(200).json({ success: true });
     }
 
     const supabase = createClient(
@@ -25,7 +44,7 @@ export default async function handler(req, res) {
       process.env.SUPABASE_SERVICE_ROLE_KEY
     );
 
-    // 1. Check if user already exists
+    // --- Email enumeration protection ---
     const { data: existingUser } = await supabase
       .from("users")
       .select("id")
@@ -33,57 +52,43 @@ export default async function handler(req, res) {
       .maybeSingle();
 
     if (existingUser) {
-      return res.status(400).json({
-        success: false,
-        error: "This email is already registered."
-      });
+      return res.status(200).json({ success: true });
     }
 
-    // 2. Delete any previous pending registrations for this email
+    // --- Delete any existing pending codes ---
     await supabase
       .from("pending_registrations")
       .delete()
       .eq("email", email);
 
-    // 3. Generate new code
+    // --- Generate new code ---
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
 
-    // 4. Insert new pending registration
-    const { error: insertError } = await supabase
-      .from("pending_registrations")
-      .insert({
-        email,
-        language: lang || "en",
-        code,
-        expires_at: expiresAt
-      });
+    await supabase.from("pending_registrations").insert({
+      email,
+      code,
+      language: lang || "en",
+      expires_at: expiresAt
+    });
 
-    if (insertError) {
-      return res.status(500).json({ success: false, error: "Database error" });
-    }
+    // --- Analytics: registration start ---
+    console.log("[ANALYTICS] registration_start", email);
 
-    // 5. Send email
     const resend = new Resend(process.env.RESEND_API_KEY);
     const msg = messages[lang] || messages.en;
 
-    const { error: emailError } = await resend.emails.send({
+    await resend.emails.send({
       from: "Handwriting Platform <onboarding@resend.dev>",
       to: email,
       subject: msg.subject,
-      html: msg.html(code, email)
+      html: msg.html(code)
     });
 
-    if (emailError) {
-      return res.status(500).json({ success: false, error: "Email delivery failed" });
-    }
+    return res.status(200).json({ success: true });
 
-    return res.status(200).json({
-      success: true,
-      next: "verify",
-      email
-    });
   } catch (err) {
-    return res.status(500).json({ success: false, error: "Server error" });
+    console.error(err);
+    return res.status(200).json({ success: true });
   }
 }
