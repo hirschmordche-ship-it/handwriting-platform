@@ -1,5 +1,4 @@
 // api/auth/verify-register.js
-
 export const config = {
   runtime: "nodejs"
 };
@@ -9,13 +8,12 @@ import { createClient } from "@supabase/supabase-js";
 export default async function handler(req, res) {
   try {
     if (req.method !== "POST") {
-      return res.status(405).json({ success: false, error: "Method not allowed" });
+      return res.status(405).json({ success: false });
     }
 
-    const { email, code } = req.body || {};
-
-    if (!email || !code) {
-      return res.status(400).json({ success: false, error: "Missing fields" });
+    const { code } = req.body || {};
+    if (!code) {
+      return res.status(400).json({ success: false });
     }
 
     const supabase = createClient(
@@ -23,40 +21,43 @@ export default async function handler(req, res) {
       process.env.SUPABASE_SERVICE_ROLE_KEY
     );
 
-    // 1. Find matching pending registration
     const { data: pending } = await supabase
       .from("pending_registrations")
       .select("*")
-      .eq("email", email)
       .eq("code", code)
       .maybeSingle();
 
     if (!pending) {
-      return res.status(400).json({ success: false, error: "Invalid or expired code" });
+      return res.status(400).json({ success: false });
     }
 
-    // 2. Create user
-    const { error: userError } = await supabase
-      .from("users")
-      .insert({
-        email,
-        language: pending.language,
-        created_at: new Date().toISOString()
-      });
+    if (new Date(pending.expires_at) < new Date()) {
+      await supabase
+        .from("pending_registrations")
+        .delete()
+        .eq("code", code);
 
-    if (userError) {
-      return res.status(500).json({ success: false, error: "User creation failed" });
+      return res.status(400).json({ success: false });
     }
 
-    // 3. Delete all pending registrations for this email
+    await supabase.from("users").insert({
+      email: pending.email,
+      language: pending.language,
+      created_at: new Date().toISOString()
+    });
+
     await supabase
       .from("pending_registrations")
       .delete()
-      .eq("email", email);
+      .eq("email", pending.email);
+
+    // --- Analytics ---
+    console.log("[ANALYTICS] verification_success", pending.email);
 
     return res.status(200).json({ success: true });
 
   } catch (err) {
-    return res.status(500).json({ success: false, error: "Server error" });
+    console.error(err);
+    return res.status(400).json({ success: false });
   }
 }
