@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head><title>Verifying...</title></head>
+<body>
+  <script>
+    async function handleCopyAndRedirect() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const code = urlParams.get('code');
+
+      if (code) {
+        try {
+          // 1. Copy to clipboard
+          await navigator.clipboard.writeText(code);
+          // 2. Optional: Store in localStorage as backup (if clipboard fails)
+          localStorage.setItem('pending_verification_code', code);
+        } catch (err) {
+          console.error("Clipboard blocked. Using fallback.");
+        }
+      }
+      // 3. Redirect back to your main page
+      window.location.href = "/index.html?verify=true";
+    }
+    handleCopyAndRedirect();
+  </script>
+</body>
+</html>
