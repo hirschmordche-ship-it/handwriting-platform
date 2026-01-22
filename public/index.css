@@ -1,31 +1,49 @@
+/* =========================================
+   ROOT VARIABLES
+========================================= */
 :root {
   --bg-gradient-light: radial-gradient(circle at top, #ffffff40, #dfe9f370);
   --bg-gradient-dark: radial-gradient(circle at top, #2a2a2a80, #050816);
+
   --glass-bg-light: rgba(255, 255, 255, 0.18);
   --glass-bg-dark: rgba(15, 15, 25, 0.6);
+
   --glass-border-light: rgba(255, 255, 255, 0.7);
   --glass-border-dark: rgba(255, 255, 255, 0.18);
+
   --accent-border-glow: 0 0 18px rgba(255, 255, 255, 0.6);
+
   --danger: #ff4d67;
   --warning: #f6c453;
   --success: #4ade80;
+
   --text-main-light: #0f172a;
   --text-main-dark: #e5e7eb;
+
   --text-muted-light: #6b7280;
   --text-muted-dark: #9ca3af;
+
   --input-bg-light: rgba(255, 255, 255, 0.75);
   --input-bg-dark: rgba(15, 23, 42, 0.75);
+
   --input-border-light: rgba(148, 163, 184, 0.5);
   --input-border-dark: rgba(51, 65, 85, 0.9);
+
   --radius-lg: 24px;
   --radius-md: 14px;
   --radius-pill: 999px;
+
   --shadow-soft: 0 24px 48px rgba(15, 23, 42, 0.35);
+
   --transition-fast: 0.18s ease-out;
   --transition-med: 0.25s ease-out;
+
   --font-main: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
+/* =========================================
+   GLOBAL RESET
+========================================= */
 *,
 *::before,
 *::after {
@@ -35,8 +53,7 @@
 html, body {
   margin: 0;
   padding: 0;
-  /* FIX: Enable mobile swipe-down to refresh */
-  overscroll-behavior-y: auto !important; 
+  overscroll-behavior-y: auto !important;
 }
 
 body {
@@ -45,7 +62,6 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  /* FIX: Allow vertical scroll if content is long, but block horizontal */
   overflow-x: hidden;
   position: relative;
   color: var(--text-main-light);
@@ -61,15 +77,17 @@ body.dark-mode {
   color: var(--text-main-dark);
 }
 
+/* =========================================
+   BACKGROUND
+========================================= */
 .background {
   position: fixed;
   inset: 0;
   background: var(--bg-gradient-light);
   filter: blur(12px);
   z-index: -2;
+  pointer-events: none;
   transition: background var(--transition-med), filter var(--transition-med);
-  /* FIX: Background must not block interactions or swipes */
-  pointer-events: none; 
 }
 
 body.dark-mode .background {
@@ -77,6 +95,9 @@ body.dark-mode .background {
   filter: blur(22px);
 }
 
+/* =========================================
+   AUTH WRAPPER + PANEL
+========================================= */
 .auth-wrapper {
   display: flex;
   align-items: center;
@@ -111,6 +132,7 @@ body.dark-mode .background {
   }
 }
 
+/* GLASS EFFECT */
 .glass {
   background: var(--glass-bg-light);
   border: 1px solid var(--glass-border-light);
@@ -124,32 +146,32 @@ body.dark-mode .glass {
   border: 1px solid var(--glass-border-dark);
 }
 
-/* Header */
+/* =========================================
+   HEADER
+========================================= */
 .auth-header {
   display: grid;
   grid-template-columns: auto 1fr auto;
   align-items: center;
   gap: 8px;
   margin-bottom: 18px;
+  direction: ltr !important;
 }
 
-.header-left {
-  display: flex;
-  justify-content: flex-start;
-}
-
+.header-left,
 .header-right {
   display: flex;
-  justify-content: flex-end;
+  align-items: center;
 }
 
-/* Tabs */
+/* =========================================
+   TABS
+========================================= */
 .tab-group {
   display: inline-flex;
   padding: 4px;
   border-radius: var(--radius-pill);
   background: rgba(255, 255, 255, 0.08);
-  position: relative;
   justify-content: center;
 }
 
@@ -159,7 +181,6 @@ body.dark-mode .tab-group {
 
 .tab-button {
   border: none;
-  outline: none;
   background: transparent;
   padding: 7px 16px;
   border-radius: var(--radius-pill);
@@ -183,7 +204,7 @@ body.dark-mode .tab-button {
 }
 
 body.dark-mode .tab-button.active {
-  color: #f9fafb;
+  color: #000 !important;
 }
 
 .tab-button.active::before {
@@ -191,16 +212,14 @@ body.dark-mode .tab-button.active {
   position: absolute;
   inset: -2px -4px;
   border-radius: var(--radius-pill);
-  background: linear-gradient(
-    135deg,
-    rgba(255, 255, 255, 0.96),
-    rgba(255, 255, 255, 0.86)
-  );
+  background: linear-gradient(135deg, rgba(255,255,255,0.96), rgba(255,255,255,0.86));
   box-shadow: var(--accent-border-glow);
   z-index: -1;
 }
 
-/* Dark mode circular slider */
+/* =========================================
+   MODE TOGGLE
+========================================= */
 .mode-toggle-circle {
   border: none;
   background: transparent;
@@ -217,8 +236,7 @@ body.dark-mode .tab-button.active {
   display: flex;
   align-items: center;
   padding: 2px;
-  position: relative;
-  transition: background var(--transition-fast), border var(--transition-fast), box-shadow var(--transition-fast);
+  transition: background var(--transition-fast), border var(--transition-fast);
   direction: ltr !important;
 }
 
@@ -237,10 +255,8 @@ body.dark-mode .mode-toggle-track {
   justify-content: center;
   font-size: 0.76rem;
   color: #020617;
-  position: relative;
   transform: translateX(0);
-  transition: transform var(--transition-med), background var(--transition-med), color var(--transition-med), box-shadow var(--transition-med);
-  box-shadow: 0 6px 10px rgba(15, 23, 42, 0.35);
+  transition: transform var(--transition-med), background var(--transition-med);
 }
 
 body.dark-mode .mode-toggle-knob {
@@ -251,7 +267,9 @@ body.dark-mode .mode-toggle-knob {
   transform: translateX(16px);
 }
 
-/* Android-style language pill */
+/* =========================================
+   LANGUAGE TOGGLE
+========================================= */
 .lang-toggle-pill {
   position: relative;
   display: inline-flex;
@@ -263,13 +281,10 @@ body.dark-mode .mode-toggle-knob {
   cursor: pointer;
   font-size: 0.78rem;
   font-weight: 500;
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
   width: 94px;
   justify-content: space-between;
   overflow: hidden;
   direction: ltr !important;
-  unicode-bidi: isolate !important;
 }
 
 body.dark-mode .lang-toggle-pill {
@@ -283,8 +298,6 @@ body.dark-mode .lang-toggle-pill {
   z-index: 1;
   color: var(--text-muted-light);
   transition: color var(--transition-fast);
-  direction: ltr !important;
-  unicode-bidi: isolate !important;
 }
 
 body.dark-mode .lang-toggle-pill span {
@@ -299,32 +312,20 @@ body.dark-mode .lang-toggle-pill span {
   border-radius: var(--radius-pill);
   background: #ffffff;
   box-shadow: var(--accent-border-glow);
-  transition: transform var(--transition-med), background var(--transition-med), box-shadow var(--transition-med);
+  transition: transform var(--transition-med);
 }
 
-/* EN active */
 .lang-toggle-pill.lang-en .lang-toggle-thumb {
-  transform: translateX(0) !important;
-}
-.lang-toggle-pill.lang-en span[data-lang="en"] {
-  color: #0f172a;
-}
-body.dark-mode .lang-toggle-pill.lang-en span[data-lang="en"] {
-  color: #020617;
+  transform: translateX(0);
 }
 
-/* עבר active – pixel-precise fix */
 .lang-toggle-pill.lang-he .lang-toggle-thumb {
-  transform: translateX(43px) !important; 
-}
-.lang-toggle-pill.lang-he span[data-lang="he"] {
-  color: #0f172a;
-}
-body.dark-mode .lang-toggle-pill.lang-he span[data-lang="he"] {
-  color: #020617;
+  transform: translateX(43px);
 }
 
-/* Body / forms */
+/* =========================================
+   FORM SECTIONS
+========================================= */
 .auth-body {
   margin-top: 6px;
 }
@@ -344,6 +345,9 @@ body.dark-mode .lang-toggle-pill.lang-he span[data-lang="he"] {
   font-weight: 600;
 }
 
+/* =========================================
+   INPUTS
+========================================= */
 .field-group {
   margin-bottom: 14px;
 }
@@ -365,8 +369,7 @@ input[type="text"] {
   font-size: 0.9rem;
   background: var(--input-bg-light);
   color: var(--text-main-light);
-  outline: none;
-  transition: border var(--transition-fast), box-shadow var(--transition-fast), background var(--transition-fast), transform var(--transition-fast);
+  transition: border var(--transition-fast), box-shadow var(--transition-fast), background var(--transition-fast);
 }
 
 body.dark-mode input[type="email"],
@@ -391,7 +394,9 @@ input:focus {
   transform: translateY(-0.5px);
 }
 
-/* Password wrapper */
+/* =========================================
+   PASSWORD WRAPPER
+========================================= */
 .password-group .password-wrapper {
   position: relative;
   display: flex;
@@ -424,10 +429,8 @@ body.rtl .password-wrapper input {
   cursor: pointer;
   background: rgba(255, 255, 255, 0.7);
   color: #111827;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(148, 163, 184, 0.7);
-  transition: background var(--transition-fast), color var(--transition-fast), transform var(--transition-fast), border var(--transition-fast);
+  transition: background var(--transition-fast), color var(--transition-fast), transform var(--transition-fast);
 }
 
 body.ltr .password-toggle {
@@ -446,9 +449,11 @@ body.dark-mode .password-toggle {
 
 .password-toggle:hover {
   transform: translateY(-0.5px);
-  border-color: rgba(255, 255, 255, 0.9);
 }
 
+/* =========================================
+   PASSWORD HELP + STRENGTH METER
+========================================= */
 .password-help {
   margin-top: 4px;
   font-size: 0.72rem;
@@ -459,7 +464,6 @@ body.dark-mode .password-help {
   color: var(--text-muted-dark);
 }
 
-/* Strength meter */
 .strength-meter {
   width: 60%;
   max-width: 250px;
@@ -477,17 +481,13 @@ body.dark-mode .password-help {
   transition: width 0.3s ease, background 0.3s ease;
 }
 
-.strength-label {
-  margin-top: 3px;
-  font-size: 0.72rem;
-}
-
 #passwordRequirements {
   color: var(--danger);
   font-weight: 500;
 }
-
-/* Field row */
+/* =========================================
+   FIELD ROW
+========================================= */
 .field-row {
   display: flex;
   justify-content: space-between;
@@ -496,7 +496,9 @@ body.dark-mode .password-help {
   margin-bottom: 14px;
 }
 
-/* Checkbox */
+/* =========================================
+   CHECKBOX
+========================================= */
 .checkbox-group {
   display: flex;
   align-items: center;
@@ -515,7 +517,9 @@ body.dark-mode .password-help {
   height: 14px;
 }
 
-/* Buttons */
+/* =========================================
+   BUTTONS
+========================================= */
 .primary-button {
   width: 100%;
   border-radius: var(--radius-pill);
@@ -554,6 +558,7 @@ body.dark-mode .primary-button {
   transform: translateY(-2px);
 }
 
+/* Link buttons */
 .link-button {
   border: none;
   background: none;
@@ -583,7 +588,9 @@ body.dark-mode .terms-link {
   color: #67e8f9;
 }
 
-/* Messages */
+/* =========================================
+   FORM MESSAGES
+========================================= */
 .form-messages {
   min-height: 18px;
   font-size: 0.78rem;
@@ -591,7 +598,9 @@ body.dark-mode .terms-link {
   color: var(--danger);
 }
 
-/* Modal */
+/* =========================================
+   MODALS — SHARED
+========================================= */
 .modal-backdrop {
   position: fixed;
   inset: 0;
@@ -636,14 +645,29 @@ body.dark-mode .terms-link {
   margin-top: 12px;
 }
 
-/* Terms modal scroll */
+/* Hide modals when [hidden] */
+#modalBackdrop[hidden],
+#termsBackdrop[hidden],
+#verifyBackdrop[hidden] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  touch-action: none !important;
+}
+
+/* =========================================
+   TERMS MODAL SCROLL
+========================================= */
 .terms-text {
   max-height: 60vh;
   overflow-y: auto;
   padding-right: 6px;
 }
 
-/* Verification input */
+/* =========================================
+   VERIFICATION INPUT
+========================================= */
 .verify-code-input {
   width: 100%;
   margin-top: 8px;
@@ -662,7 +686,9 @@ body.dark-mode .verify-code-input {
   color: var(--text-main-dark);
 }
 
-/* Footer */
+/* =========================================
+   FOOTER
+========================================= */
 .footer {
   margin-top: 20px;
   text-align: center;
@@ -692,7 +718,9 @@ body.rtl .footer {
   direction: rtl;
 }
 
-/* RTL / LTR */
+/* =========================================
+   RTL / LTR
+========================================= */
 body.ltr {
   direction: ltr;
   text-align: left;
@@ -711,7 +739,9 @@ body.rtl .field-row {
   flex-direction: row-reverse;
 }
 
-/* Animation */
+/* =========================================
+   ANIMATIONS
+========================================= */
 @keyframes fadeSlideIn {
   from {
     opacity: 0;
@@ -721,17 +751,6 @@ body.rtl .field-row {
     opacity: 1;
     transform: translateY(0);
   }
-}
-
-/* Hidden modals truly disappear */
-#modalBackdrop[hidden],
-#termsBackdrop[hidden],
-#verifyBackdrop[hidden] {
-  display: none !important;
-  visibility: hidden !important;
-  opacity: 0 !important;
-  pointer-events: none !important;
-  touch-action: none !important;
 }
 
 /* Verification success animation */
@@ -764,95 +783,260 @@ body.rtl .field-row {
 .auth-header * {
   direction: ltr !important;
 }
-
-/* DARK MODE — force active tab text to black */
-body.dark-mode .auth-header .active,
-body.dark-mode .auth-header .active * {
-  color: #000 !important;
-}
-
-/* RESET FLOW UI */
-.reset-container {
-  margin-top: 20px;
-}
-
-.reset-title {
-  font-size: 0.95rem;
-  opacity: 0.8;
-  margin-bottom: 8px;
-}
-
-.reset-status {
-  font-size: 0.9rem;
-  margin-bottom: 12px;
-  opacity: 0.85;
-}
-
-.reset-form {
+/* =========================================
+   RESET MODAL — BACKDROP
+========================================= */
+#resetBackdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(4px);
   display: flex;
-  flex-direction: column;
-  gap: 12px;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
 }
 
-.reset-actions {
+#resetBackdrop[hidden] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* =========================================
+   RESET MODAL — CONTAINER
+========================================= */
+#resetBackdrop .modal {
+  width: min(100% - 32px, 360px);
+  border-radius: var(--radius-lg);
+  padding: 0;
+  background: var(--glass-bg-light);
+  border: 1px solid var(--glass-border-light);
+  backdrop-filter: blur(20px) saturate(150%);
+  -webkit-backdrop-filter: blur(20px) saturate(150%);
+  transition: background var(--transition-med), border var(--transition-med);
+}
+
+body.dark-mode #resetBackdrop .modal {
+  background: var(--glass-bg-dark);
+  border-color: var(--glass-border-dark);
+}
+
+/* Desktop expansion (Option C) */
+@media (min-width: 640px) {
+  #resetBackdrop .modal {
+    width: 420px;
+  }
+}
+
+@media (min-width: 900px) {
+  #resetBackdrop .modal {
+    width: 480px;
+  }
+}
+
+/* =========================================
+   RESET MODAL — HEADER
+========================================= */
+#resetBackdrop .modal-header {
+  padding: 16px 20px 10px;
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
-.reset-back {
-  background: transparent;
-  border: 1px solid var(--border-color);
-  padding: 6px 10px;
-  font-size: 0.8rem;
-  border-radius: 6px;
-  cursor: pointer;
-  opacity: 0.8;
-  transition: 0.2s;
+#resetBackdrop .modal-header h3 {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
 }
 
-.reset-back:hover {
-  opacity: 1;
-}
-
-.reset-resend {
-  background: none;
+#resetClose {
   border: none;
-  color: var(--accent-color);
+  background: none;
+  font-size: 1.1rem;
   cursor: pointer;
-  opacity: 0.7;
+  color: inherit;
 }
 
-.reset-resend:disabled {
-  opacity: 0.3;
-  cursor: default;
+/* =========================================
+   RESET MODAL — BODY
+========================================= */
+#resetBackdrop .modal-body {
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  font-size: 0.9rem;
 }
 
-.strength-meter {
+/* Step containers */
+#resetStepEmail,
+#resetStepCode,
+#resetStepPassword {
+  display: none;
+}
+
+#resetStepEmail {
+  display: block;
+}
+
+/* =========================================
+   RESET INPUTS
+========================================= */
+#resetBackdrop input.auth-input,
+#resetBackdrop .verify-code-input {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--input-border-light);
+  background: var(--input-bg-light);
+  color: var(--text-main-light);
+  font-size: 16px;
+}
+
+body.dark-mode #resetBackdrop input.auth-input,
+body.dark-mode #resetBackdrop .verify-code-input {
+  background: var(--input-bg-dark);
+  border-color: var(--input-border-dark);
+  color: var(--text-main-dark);
+}
+
+/* =========================================
+   RESET CODE — RESEND ROW
+========================================= */
+.reset-resend-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: -8px;
+}
+
+#resetResendBtn {
+  border: none;
+  background: none;
+  color: #0f766e;
+  cursor: pointer;
+  font-size: 0.82rem;
+  text-decoration: underline;
+}
+
+body.dark-mode #resetResendBtn {
+  color: #67e8f9;
+}
+
+#resetResendBtn:disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+#resetResendCountdown {
+  font-size: 0.82rem;
+  opacity: 0.8;
+}
+
+/* =========================================
+   RESET PASSWORD — STRENGTH METER
+========================================= */
+#resetStepPassword .strength-meter {
+  width: 100%;
   height: 6px;
-  background: #ddd;
+  background: var(--input-border-light);
   border-radius: 4px;
   overflow: hidden;
 }
 
-.strength-meter .bar {
+body.dark-mode #resetStepPassword .strength-meter {
+  background: var(--input-border-dark);
+}
+
+#resetStepPassword .strength-bar {
   height: 100%;
   width: 0%;
-  background: red;
-  transition: width 0.3s, background 0.3s;
+  background: var(--danger);
+  transition: width 0.25s ease, background 0.25s ease;
 }
 
-.password-wrapper {
-  position: relative;
+#resetStrengthLabel {
+  font-size: 0.78rem;
+  margin-top: 4px;
+  text-align: left;
 }
 
-.password-toggle {
-  position: absolute;
-  right: 10px;
-  top: 50%;
-  transform: translateY(-50%);
-  background: none;
-  border: none;
+body.rtl #resetStrengthLabel {
+  text-align: right;
+}
+
+#resetPasswordRequirements {
+  font-size: 0.78rem;
+  margin-top: 4px;
+  color: var(--danger);
+  font-weight: 500;
+}
+
+/* =========================================
+   RESET PASSWORD — CONFIRM FIELD
+========================================= */
+#resetConfirmPassword {
+  margin-top: 4px;
+}
+
+/* =========================================
+   RESET MODAL — FOOTER
+========================================= */
+#resetBackdrop .modal-footer {
+  padding: 16px 24px 20px;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+#resetBackBtn {
+  flex: 1;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--input-border-light);
+  background: transparent;
+  padding: 9px 16px;
+  font-size: 0.9rem;
   cursor: pointer;
-  opacity: 0.7;
+  transition: opacity var(--transition-fast);
+}
+
+body.dark-mode #resetBackBtn {
+  border-color: var(--input-border-dark);
+  color: var(--text-main-dark);
+}
+
+#resetBackBtn:hover {
+  opacity: 0.85;
+}
+
+#resetPrimaryBtn {
+  flex: 2;
+}
+
+/* =========================================
+   RTL SUPPORT
+========================================= */
+body.rtl #resetBackdrop .modal {
+  direction: rtl;
+}
+
+body.rtl #resetBackdrop input {
+  text-align: right;
+}
+
+body.rtl #resetResendRow {
+  flex-direction: row-reverse;
+}
+
+/* =========================================
+   FINAL POLISH
+========================================= */
+#resetCodeMessages,
+#resetPasswordMessages {
+  min-height: 18px;
+  font-size: 0.78rem;
+  color: var(--danger);
 }
