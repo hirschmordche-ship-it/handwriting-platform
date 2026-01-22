@@ -1075,57 +1075,38 @@ body.rtl #resetResendRow {
 }
 
 /* =========================================
-   FIX: Remove large vertical gaps in reset modal
-========================================= */
-
-/* Reduce modal-body spacing */
-#resetBackdrop .modal-body {
-  gap: 10px !important;
-  padding-top: 14px !important;
-  padding-bottom: 14px !important;
-}
-
-/* Remove extra spacing between steps */
-#resetStepEmail,
-#resetStepCode,
-#resetStepPassword {
-  margin: 0 !important;
-  padding: 0 !important;
-}
-
-/* Tighten spacing around inputs */
-#resetBackdrop input.auth-input,
-#resetBackdrop .verify-code-input {
-  margin: 4px 0 !important;
-}
-
-/* Tighten spacing for strength meter + requirements */
-#resetStrengthLabel,
-#resetPasswordRequirements {
-  margin-top: 2px !important;
-}
-
-/* Reduce footer spacing */
-#resetBackdrop .modal-footer {
-  padding-top: 10px !important;
-  padding-bottom: 14px !important;
-  gap: 8px !important;
-}
-
-/* =========================================
-   FIX: Reset modal title should sit BELOW the X
+   RESET MODAL — PERFECTLY LEVEL TITLE + X
 ========================================= */
 
 #resetBackdrop .modal-header {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  padding: 12px 20px 0 !important;
-  gap: 6px !important;
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 14px 20px 10px !important;
 }
 
+/* Center the title visually */
 #resetBackdrop .modal-header h3 {
-  width: 100%;
+  flex: 1;
   text-align: center;
-  margin-top: 4px;
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+  transform: translateX(-12px); /* balances the X width */
+}
+
+/* Keep the X aligned right */
+#resetClose {
+  margin-left: auto;
+  padding: 0;
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+}
+
+/* RTL support */
+body.rtl #resetBackdrop .modal-header h3 {
+  transform: translateX(12px);
 }
