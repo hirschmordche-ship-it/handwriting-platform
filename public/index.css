@@ -1110,3 +1110,50 @@ body.rtl #resetResendRow {
 body.rtl #resetBackdrop .modal-header h3 {
   transform: translateX(12px);
 }
+
+/* =========================================
+   FIX: Reset Enter Code footer buttons
+   Back = bottom-left
+   Continue = bottom-right
+========================================= */
+
+#resetBackdrop .modal-footer {
+  display: flex !important;
+  flex-direction: row !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  padding: 16px 24px 20px !important;
+  gap: 12px !important;
+}
+
+/* Back button */
+#resetBackBtn {
+  flex: 1;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--input-border-light);
+  background: transparent;
+  padding: 10px 16px; /* equal vertical/horizontal spacing */
+  font-size: 0.9rem;
+  cursor: pointer;
+  text-align: center;
+}
+
+body.dark-mode #resetBackBtn {
+  border-color: var(--input-border-dark);
+  color: var(--text-main-dark);
+}
+
+/* Continue button */
+#resetPrimaryBtn {
+  flex: 1;
+  border-radius: var(--radius-pill);
+  padding: 10px 16px; /* matches Back button exactly */
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+/* RTL support */
+body.rtl #resetBackdrop .modal-footer {
+  flex-direction: row-reverse !important;
+}
