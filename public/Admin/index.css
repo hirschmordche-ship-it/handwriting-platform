@@ -1,0 +1,245 @@
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: var(--bg);
+  color: var(--fg);
+}
+
+:root {
+  --bg-light: #f5f5f5;
+  --fg-light: #111;
+  --bg-dark: #111;
+  --fg-dark: #f5f5f5;
+  --panel-bg-light: #ffffff;
+  --panel-bg-dark: #1b1b1b;
+  --border-light: #ddd;
+  --border-dark: #333;
+  --accent: #2563eb;
+}
+
+body.theme-light {
+  --bg: var(--bg-light);
+  --fg: var(--fg-light);
+  --panel-bg: var(--panel-bg-light);
+  --border: var(--border-light);
+}
+
+body.theme-dark {
+  --bg: var(--bg-dark);
+  --fg: var(--fg-dark);
+  --panel-bg: var(--panel-bg-dark);
+  --border: var(--border-dark);
+}
+
+.admin-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--border);
+  background: var(--panel-bg);
+}
+
+.admin-tabs {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.admin-tab {
+  padding: 0.4rem 0.9rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.admin-tab.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+.admin-header-right {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.admin-main {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  height: calc(100vh - 52px);
+}
+
+.user-list-panel {
+  border-right: 1px solid var(--border);
+  background: var(--panel-bg);
+  display: flex;
+  flex-direction: column;
+}
+
+.user-list-header {
+  padding: 0.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+#userSearch {
+  width: 100%;
+  padding: 0.4rem 0.6rem;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: inherit;
+}
+
+.user-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+}
+
+.user-list-item {
+  padding: 0.6rem 0.8rem;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.user-list-item:hover {
+  background: rgba(37, 99, 235, 0.08);
+}
+
+.user-list-item.active {
+  background: rgba(37, 99, 235, 0.18);
+}
+
+.user-list-email {
+  font-size: 0.9rem;
+}
+
+.user-list-meta {
+  font-size: 0.75rem;
+  opacity: 0.8;
+  display: flex;
+  justify-content: space-between;
+}
+
+.user-details-panel {
+  padding: 1rem;
+  overflow-y: auto;
+}
+
+.user-summary.empty-state {
+  opacity: 0.7;
+  font-size: 0.95rem;
+}
+
+.user-details-sections.hidden {
+  display: none;
+}
+
+.user-details-top h2 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.user-details-top p {
+  margin: 0.15rem 0;
+  font-size: 0.85rem;
+  opacity: 0.85;
+}
+
+.user-glyphs-controls {
+  margin-top: 1rem;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.glyph-view-toggle {
+  padding: 0.3rem 0.8rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+
+.glyph-view-toggle.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+.glyphs-by-letter,
+.glyphs-all {
+  margin-top: 1rem;
+}
+
+.glyphs-by-letter-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+  gap: 0.5rem;
+}
+
+.glyph-letter-card {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.4rem;
+  text-align: center;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.glyph-letter-card span {
+  display: block;
+}
+
+.glyph-letter-card .glyph-letter {
+  font-weight: 600;
+  margin-bottom: 0.2rem;
+}
+
+.glyph-letter-card .glyph-count {
+  font-size: 0.75rem;
+  opacity: 0.8;
+}
+
+.glyphs-all.hidden {
+  display: none;
+}
+
+.glyph-item {
+  border-bottom: 1px solid var(--border);
+  padding: 0.5rem 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.glyph-item-main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.glyph-item-meta {
+  font-size: 0.75rem;
+  opacity: 0.8;
+}
+
+.glyph-item-actions button {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
