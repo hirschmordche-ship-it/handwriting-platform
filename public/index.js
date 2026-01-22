@@ -1,17 +1,23 @@
-// Language state
+// =========================
+// CORE STATE
+// =========================
 let currentLang = "en";
 let pendingRegisterEmail = "";
+let themeMode = "light";
 
-// ADDED: resend cooldown (register)
+// Register resend cooldown
 let resendTimerInterval = null;
 let resendSecondsLeft = 0;
 
-// ADDED: reset flow state
-let resetFlowStep = "START";
+// Reset flow state
+let resetStep = "email"; // "email" | "code" | "password"
+let resetEmail = "";
 let resetCooldownInterval = null;
 let resetSecondsLeft = 0;
 
-// i18n dictionary
+// =========================
+// I18N DICTIONARY
+// =========================
 const i18n = {
   en: {
     "register.title": "Create account",
@@ -36,7 +42,6 @@ const i18n = {
     "login.submit": "Login",
 
     "password.help": "Minimum 8 characters, with numbers and symbols.",
-    "modal.ok": "OK",
 
     strength: {
       tooShort: "Too short",
@@ -62,21 +67,28 @@ const i18n = {
     spamHint: "Check your spam folder if you don’t see the email.",
     resend: "Resend code",
 
-    // RESET FLOW
-    resetInitTitle: "Forgot password?",
-    resetInitButton: "Securely Reset via Email",
-    resetStatusStart: "Enter your email for a verification code.",
-    resetStatusSent: "Code sent! Enter it and your new password.",
-    resetEmailPlaceholder: "Email Address",
-    resetCodePlaceholder: "6-Digit Code",
-    resetNewPasswordPlaceholder: "New Password",
-    resetConfirmPasswordPlaceholder: "Confirm Password",
-    resetSendCode: "Send Reset Code",
+    // Reset flow
+    resetTitleEmail: "Reset password",
+    resetTitleCode: "Enter code",
+    resetTitlePassword: "Set new password",
+    resetMessageEmail: "Enter your email to receive a reset code.",
+    resetMessageCode: "Enter the 6-digit code we sent to your email.",
+    resetMessagePassword: "Set a new password and confirm it.",
+    resetEmailPlaceholder: "you@example.com",
+    resetNewPasswordLabel: "New password",
+    resetNewPasswordPlaceholder: "New password",
+    resetConfirmLabel: "Confirm password",
+    resetConfirmPasswordPlaceholder: "Confirm password",
+    resetInvalidEmail: "Please enter a valid email.",
+    resetStartError: "Could not start password reset. Please try again.",
+    resetCodeError: "Invalid or expired code. Please try again.",
+    resetPasswordInvalid: "Password does not meet the requirements.",
+    resetPasswordMismatch: "Passwords do not match.",
+    resetPasswordError: "Could not update password. Please try again.",
+    resetPasswordSuccess: "Password updated. Logging you in...",
+    resetBack: "Back",
+    resetContinue: "Continue",
     resetUpdateLogin: "Update & Login",
-    resetReturn: "Return to Login",
-    sending: "Sending...",
-    tryAgain: "Try Again",
-    invalidCode: "Invalid or expired code",
 
     "footer.text": `Need help? Contact us <a href="contactus.html">here</a>`,
 
@@ -120,7 +132,6 @@ If you have questions, issues, or need assistance, you can reach us through our 
     "login.submit": "התחברות",
 
     "password.help": "לפחות 8 תווים, כולל מספרים וסימנים.",
-    "modal.ok": "הבנתי",
 
     strength: {
       tooShort: "קצר מדי",
@@ -146,21 +157,28 @@ If you have questions, issues, or need assistance, you can reach us through our 
     spamHint: "בדוק גם בתיקיית הספאם.",
     resend: "שלח קוד שוב",
 
-    // RESET FLOW
-    resetInitTitle: "שכחת סיסמה?",
-    resetInitButton: "איפוס מאובטח דרך אימייל",
-    resetStatusStart: "הזן את האימייל לקבלת קוד אימות.",
-    resetStatusSent: "הקוד נשלח! הזן אותו וסיסמה חדשה.",
-    resetEmailPlaceholder: "כתובת אימייל",
-    resetCodePlaceholder: "קוד בן 6 ספרות",
+    // Reset flow
+    resetTitleEmail: "איפוס סיסמה",
+    resetTitleCode: "הזן קוד",
+    resetTitlePassword: "הגדרת סיסמה חדשה",
+    resetMessageEmail: "הזן את האימייל לקבלת קוד איפוס.",
+    resetMessageCode: "הזן את הקוד בן 6 הספרות שנשלח לאימייל.",
+    resetMessagePassword: "הגדר סיסמה חדשה ואשר אותה.",
+    resetEmailPlaceholder: "name@domain.com",
+    resetNewPasswordLabel: "סיסמה חדשה",
     resetNewPasswordPlaceholder: "סיסמה חדשה",
+    resetConfirmLabel: "אימות סיסמה",
     resetConfirmPasswordPlaceholder: "אימות סיסמה",
-    resetSendCode: "שלח קוד איפוס",
+    resetInvalidEmail: "אנא הזן אימייל תקין.",
+    resetStartError: "לא ניתן להתחיל איפוס סיסמה. נסה שוב.",
+    resetCodeError: "קוד שגוי או שפג תוקפו. נסה שוב.",
+    resetPasswordInvalid: "הסיסמה אינה עומדת בדרישות.",
+    resetPasswordMismatch: "הסיסמאות אינן תואמות.",
+    resetPasswordError: "לא ניתן לעדכן סיסמה. נסה שוב.",
+    resetPasswordSuccess: "הסיסמה עודכנה. מתחבר...",
+    resetBack: "חזרה",
+    resetContinue: "המשך",
     resetUpdateLogin: "עדכן והתחבר",
-    resetReturn: "חזרה להתחברות",
-    sending: "שולח...",
-    tryAgain: "נסה שוב",
-    invalidCode: "קוד שגוי או שפג תוקפו",
 
     "footer.text": `צריך עזרה? צרו קשר <a href="contactus.html">כאן</a>`,
 
@@ -185,45 +203,43 @@ If you have questions, issues, or need assistance, you can reach us through our 
   }
 };
 
-// DOM references
+// =========================
+// DOM REFERENCES
+// =========================
 const body = document.body;
+
+// Tabs & forms
 const tabRegister = document.getElementById("tabRegister");
 const tabLogin = document.getElementById("tabLogin");
 const registerForm = document.getElementById("registerForm");
 const loginForm = document.getElementById("loginForm");
+
+// Toggles
 const langToggle = document.getElementById("langToggle");
 const modeToggle = document.getElementById("modeToggle");
 const modeIcon = document.querySelector(".mode-toggle-knob .mode-icon");
 
+// Register fields
+const regEmail = document.getElementById("regEmail");
 const regPassword = document.getElementById("regPassword");
 const regConfirmPassword = document.getElementById("regConfirmPassword");
-const loginPassword = document.getElementById("loginPassword");
+const regTerms = document.getElementById("regTerms");
+const regMessages = document.getElementById("regMessages");
 const regStrengthBar = document.getElementById("regStrengthBar");
 const regStrengthLabel = document.getElementById("regStrengthLabel");
-const regMessages = document.getElementById("regMessages");
-const loginMessages = document.getElementById("loginMessages");
-const regTerms = document.getElementById("regTerms");
-const regEmail = document.getElementById("regEmail");
+const passwordRequirements = document.getElementById("passwordRequirements");
+
+// Login fields
 const loginEmail = document.getElementById("loginEmail");
+const loginPassword = document.getElementById("loginPassword");
 const rememberMe = document.getElementById("rememberMe");
+const loginMessages = document.getElementById("loginMessages");
+const forgotPasswordBtn = document.getElementById("forgotPassword");
 
-// RESET DOM references
-const resetInitView = document.getElementById("reset-init-view");
-const resetFormView = document.getElementById("reset-form-view");
-const resetStatusMsg = document.getElementById("reset-status-msg");
-const resetEmailInput = document.getElementById("reset-email");
-const resetCodeInput = document.getElementById("reset-code");
-const resetPasswordWrapper = document.getElementById("reset-password-wrapper");
-const resetNewPassword = document.getElementById("reset-new-password");
-const resetConfirmPassword = document.getElementById("reset-confirm-password");
-const resetMainBtn = document.getElementById("reset-main-btn");
-const resetBackBtn = document.getElementById("reset-back-btn");
-const resetResendWrapper = document.getElementById("reset-resend-wrapper");
-const resetResendBtn = document.getElementById("reset-resend-btn");
-const resetResendCountdown = document.getElementById("reset-resend-countdown");
-const resetStrength = document.getElementById("reset-strength");
+// Footer
+const footerText = document.getElementById("footerText");
 
-// Modals
+// Info modal
 const modalBackdrop = document.getElementById("modalBackdrop");
 const modalTitle = document.getElementById("modalTitle");
 const modalBody = document.getElementById("modalBody");
@@ -237,191 +253,88 @@ const termsOk = document.getElementById("termsOk");
 const termsText = document.getElementById("termsText");
 const openTerms = document.getElementById("openTerms");
 
-// Verification modal
+// Verify modal
 const verifyBackdrop = document.getElementById("verifyBackdrop");
 const verifyClose = document.getElementById("verifyClose");
 const verifyTitle = document.getElementById("verifyTitle");
 const verifyMessage = document.getElementById("verifyMessage");
 const verifyCodeInput = document.getElementById("verifyCodeInput");
-const verifySubmit = document.getElementById("verifySubmit");
 const verifyMessages = document.getElementById("verifyMessages");
+const verifySubmit = document.getElementById("verifySubmit");
 
-// ADDED elements (must exist in HTML)
-const resendBtn = document.getElementById("resendCode");
-const resendCountdown = document.getElementById("resendCountdown");
-const spamHintEl = document.getElementById("spamHint");
+// Reset modal
+const resetBackdrop = document.getElementById("resetBackdrop");
+const resetClose = document.getElementById("resetClose");
+const resetTitle = document.getElementById("resetTitle");
+const resetMessage = document.getElementById("resetMessage");
+const resetStepEmail = document.getElementById("resetStepEmail");
+const resetEmailInput = document.getElementById("resetEmailInput");
+const resetStepCode = document.getElementById("resetStepCode");
+const resetCodeInput = document.getElementById("resetCodeInput");
+const resetCodeMessages = document.getElementById("resetCodeMessages");
+const resetResendBtn = document.getElementById("resetResendBtn");
+const resetResendCountdown = document.getElementById("resetResendCountdown");
+const resetStepPassword = document.getElementById("resetStepPassword");
+const resetNewPassword = document.getElementById("resetNewPassword");
+const resetConfirmPassword = document.getElementById("resetConfirmPassword");
+const resetPasswordRequirements = document.getElementById("resetPasswordRequirements");
+const resetStrengthBar = document.getElementById("resetStrengthBar");
+const resetStrengthLabel = document.getElementById("resetStrengthLabel");
+const resetPasswordMessages = document.getElementById("resetPasswordMessages");
+const resetBackBtn = document.getElementById("resetBackBtn");
+const resetPrimaryBtn = document.getElementById("resetPrimaryBtn");
 
-// ---------- MODAL HELPERS ----------
+// =========================
+// MODAL HELPERS
+// =========================
 function openModal(title, message) {
+  if (!modalBackdrop) return;
   modalTitle.textContent = title;
   modalBody.textContent = message;
   modalBackdrop.hidden = false;
 }
 
 function closeModal() {
+  if (!modalBackdrop) return;
   modalBackdrop.hidden = true;
 }
 
-modalClose.addEventListener("click", closeModal);
-modalOk.addEventListener("click", closeModal);
-modalBackdrop.addEventListener("click", (e) => {
-  if (e.target === modalBackdrop) closeModal();
-});
+if (modalClose) modalClose.addEventListener("click", closeModal);
+if (modalOk) modalOk.addEventListener("click", closeModal);
+if (modalBackdrop) {
+  modalBackdrop.addEventListener("click", (e) => {
+    if (e.target === modalBackdrop) closeModal();
+  });
+}
 
 // Terms modal
-openTerms.addEventListener("click", () => {
+function openTermsModal() {
   const dict = i18n[currentLang];
+  if (!termsBackdrop) return;
   termsText.innerHTML = dict["terms.full"];
   termsBackdrop.hidden = false;
-});
+}
 
-function closeTerms() {
+function closeTermsModal() {
+  if (!termsBackdrop) return;
   termsBackdrop.hidden = true;
 }
 
-termsClose.addEventListener("click", closeTerms);
-termsOk.addEventListener("click", closeTerms);
-termsBackdrop.addEventListener("click", (e) => {
-  if (e.target === termsBackdrop) closeTerms();
-});
-
-// ---------- VERIFY MODAL ----------
-function openVerifyModal(email) {
-  const dict = i18n[currentLang];
-  pendingRegisterEmail = email;
-
-  verifyTitle.textContent = dict.regVerifyTitle;
-  verifyMessage.textContent = dict.regVerifyPrompt;
-  verifyCodeInput.value = "";
-  verifyMessages.textContent = "";
-  verifyBackdrop.hidden = false;
-  verifyBackdrop.classList.remove("verify-success");
-
-  if (spamHintEl) spamHintEl.textContent = dict.spamHint;
-  if (resendBtn) resendBtn.textContent = dict.resend;
-
-  startResendCooldown();
-  verifyCodeInput.focus();
-}
-
-function closeVerifyModal() {
-  verifyBackdrop.hidden = true;
-  pendingRegisterEmail = "";
-}
-
-verifyClose.addEventListener("click", closeVerifyModal);
-verifyBackdrop.addEventListener("click", (e) => {
-  if (e.target === verifyBackdrop) closeVerifyModal();
-});
-
-// ---------- RESEND (REGISTER) ----------
-function startResendCooldown() {
-  // 3 minutes cooldown
-  resendSecondsLeft = 180;
-  if (resendBtn) resendBtn.classList.add("disabled");
-
-  if (resendCountdown) {
-    const m = Math.floor(resendSecondsLeft / 60);
-    const s = resendSecondsLeft % 60;
-    resendCountdown.textContent = `${m}:${s.toString().padStart(2, "0")}`;
-  }
-
-  if (resendTimerInterval) clearInterval(resendTimerInterval);
-  resendTimerInterval = setInterval(() => {
-    resendSecondsLeft--;
-    if (resendCountdown) {
-      const m = Math.floor(resendSecondsLeft / 60);
-      const s = resendSecondsLeft % 60;
-      resendCountdown.textContent = `${m}:${s.toString().padStart(2, "0")}`;
-    }
-
-    if (resendSecondsLeft <= 0) {
-      clearInterval(resendTimerInterval);
-      resendTimerInterval = null;
-      if (resendBtn) resendBtn.classList.remove("disabled");
-      if (resendCountdown) resendCountdown.textContent = "";
-    }
-  }, 1000);
-}
-
-if (resendBtn) {
-  resendBtn.addEventListener("click", async () => {
-    if (resendSecondsLeft > 0) return;
-    if (!pendingRegisterEmail) return;
-
-    try {
-      await fetch("/api/auth/start-register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: pendingRegisterEmail,
-          password: regPassword.value,
-          lang: currentLang
-        })
-      });
-    } catch (err) {
-      console.error("Resend failed", err);
-    } finally {
-      startResendCooldown();
-    }
+if (openTerms) openTerms.addEventListener("click", openTermsModal);
+if (termsClose) termsClose.addEventListener("click", closeTermsModal);
+if (termsOk) termsOk.addEventListener("click", closeTermsModal);
+if (termsBackdrop) {
+  termsBackdrop.addEventListener("click", (e) => {
+    if (e.target === termsBackdrop) closeTermsModal();
   });
 }
 
-// ---------- AUTO SUBMIT ON 6 DIGITS (REGISTER VERIFY) ----------
-if (verifyCodeInput) {
-  verifyCodeInput.addEventListener("input", () => {
-    verifyMessages.textContent = "";
-    if (/^\d{6}$/.test(verifyCodeInput.value)) {
-      verifySubmit.click();
-    }
-  });
-}
-
-// ---------- VERIFY REGISTER ----------
-verifySubmit.addEventListener("click", async () => {
-  const dict = i18n[currentLang];
-  verifyMessages.textContent = "";
-
-  const code = (verifyCodeInput.value || "").trim();
-  if (!pendingRegisterEmail || !code) {
-    verifyMessages.textContent = dict.regVerifyError;
-    return;
-  }
-
-  verifySubmit.disabled = true;
-
-  try {
-    const res = await fetch("/api/auth/verify-register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: pendingRegisterEmail, code })
-    });
-
-    if (!res.ok) {
-      throw new Error("verify failed");
-    }
-
-    const data = await res.json();
-    if (!data.success) {
-      verifyMessages.textContent = dict.regVerifyError;
-      return;
-    }
-
-    verifyBackdrop.classList.add("verify-success");
-    setTimeout(() => {
-      window.location.href = "dashboard.html";
-    }, 900);
-
-  } catch (err) {
-    console.error(err);
-    verifyMessages.textContent = dict.regVerifyError;
-  } finally {
-    verifySubmit.disabled = false;
-  }
-});
-
-// ---------- TABS ----------
+// =========================
+// TABS
+// =========================
 function setActiveTab(tab) {
+  if (!tabRegister || !tabLogin || !registerForm || !loginForm) return;
+
   if (tab === "register") {
     tabRegister.classList.add("active");
     tabLogin.classList.remove("active");
@@ -435,99 +348,109 @@ function setActiveTab(tab) {
   }
 }
 
-tabRegister.addEventListener("click", () => setActiveTab("register"));
-tabLogin.addEventListener("click", () => setActiveTab("login"));
-
-// ---------- DARK MODE ----------
-function setMode(mode) {
-  body.classList.remove("light-mode", "dark-mode");
-  if (mode === "dark") {
-    body.classList.add("dark-mode");
-    modeToggle.classList.add("dark-active");
-    if (modeIcon) modeIcon.textContent = "🌙";
-  } else {
-    body.classList.add("light-mode");
-    modeToggle.classList.remove("dark-active");
-    if (modeIcon) modeIcon.textContent = "☀️";
-  }
-  localStorage.setItem("themeMode", mode);
+if (tabRegister) {
+  tabRegister.addEventListener("click", () => setActiveTab("register"));
+}
+if (tabLogin) {
+  tabLogin.addEventListener("click", () => setActiveTab("login"));
 }
 
-modeToggle.addEventListener("click", () => {
-  const isDark = body.classList.contains("dark-mode");
-  setMode(isDark ? "light" : "dark");
-});
+// =========================
+// DARK MODE
+// =========================
+function setMode(mode) {
+  themeMode = mode === "dark" ? "dark" : "light";
+  body.classList.remove("light-mode", "dark-mode");
+  body.classList.add(themeMode === "dark" ? "dark-mode" : "light-mode");
 
-// ---------- LANGUAGE ----------
+  if (modeToggle) {
+    if (themeMode === "dark") {
+      modeToggle.classList.add("dark-active");
+    } else {
+      modeToggle.classList.remove("dark-active");
+    }
+  }
+
+  if (modeIcon) {
+    modeIcon.textContent = themeMode === "dark" ? "🌙" : "☀️";
+  }
+
+  localStorage.setItem("themeMode", themeMode);
+}
+
+if (modeToggle) {
+  modeToggle.addEventListener("click", () => {
+    const next = themeMode === "dark" ? "light" : "dark";
+    setMode(next);
+  });
+}
+
+// =========================
+// LANGUAGE & RTL/LTR
+// =========================
 function setLanguage(lang) {
-  currentLang = lang;
+  currentLang = lang === "he" ? "he" : "en";
+  const dict = i18n[currentLang];
 
+  // Body direction (header stays visually stable)
   body.classList.remove("ltr", "rtl");
-  body.classList.add(lang === "he" ? "rtl" : "ltr");
+  body.classList.add(currentLang === "he" ? "rtl" : "ltr");
+  document.documentElement.lang = currentLang === "he" ? "he" : "en";
 
-  document.documentElement.lang = lang === "he" ? "he" : "en";
+  if (langToggle) {
+    langToggle.classList.toggle("lang-he", currentLang === "he");
+    langToggle.classList.toggle("lang-en", currentLang !== "he");
+  }
 
-  langToggle.classList.toggle("lang-he", lang === "he");
-  langToggle.classList.toggle("lang-en", lang !== "he");
-
-  const dict = i18n[lang];
-
-  document.querySelectorAll("[data-i18n]").forEach(el => {
+  // Text content
+  document.querySelectorAll("[data-i18n]").forEach((el) => {
     const key = el.getAttribute("data-i18n");
-    if (dict[key]) {
+    if (key && dict[key]) {
       el.textContent = dict[key];
     }
   });
 
-  document.querySelectorAll("[data-i18n-placeholder]").forEach(el => {
+  // Placeholders
+  document.querySelectorAll("[data-i18n-placeholder]").forEach((el) => {
     const key = el.getAttribute("data-i18n-placeholder");
-    if (dict[key]) {
+    if (key && dict[key]) {
       el.placeholder = dict[key];
     }
   });
 
   // Password toggle labels
-  document.querySelectorAll(".password-toggle").forEach(btn => {
+  document.querySelectorAll(".password-toggle").forEach((btn) => {
     const targetId = btn.getAttribute("data-target");
+    if (!targetId) return;
     const input = document.getElementById(targetId);
-    const isText = input && input.type === "text";
+    if (!input) return;
+    const isText = input.type === "text";
     btn.textContent = isText ? dict.hide : dict.show;
   });
 
   // Terms text if open
-  if (!termsBackdrop.hidden) {
+  if (termsBackdrop && !termsBackdrop.hidden) {
     termsText.innerHTML = dict["terms.full"];
   }
 
   // Footer text
-  const footer = document.getElementById("footerText");
-  if (footer) {
-    footer.innerHTML = dict["footer.text"];
+  if (footerText) {
+    footerText.innerHTML = dict["footer.text"];
   }
 
-  // RESET UI dynamic text
-  if (resetStatusMsg) {
-    resetStatusMsg.textContent =
-      resetFlowStep === "START"
-        ? dict.resetStatusStart
-        : dict.resetStatusSent;
-  }
-  if (resetMainBtn) {
-    resetMainBtn.textContent =
-      resetFlowStep === "START"
-        ? dict.resetSendCode
-        : dict.resetUpdateLogin;
-  }
-
-  localStorage.setItem("authLang", lang);
+  localStorage.setItem("authLang", currentLang);
 }
 
-langToggle.addEventListener("click", () => {
-  const next = currentLang === "en" ? "he" : "en";
-  setLanguage(next);
-});
+if (langToggle) {
+  langToggle.addEventListener("click", () => {
+    const next = currentLang === "en" ? "he" : "en";
+    setLanguage(next);
+  });
+}
 
-// ---------- PASSWORD TOGGLES ----------
+// =========================
+// PASSWORD TOGGLES
+// =========================
 function setupPasswordToggle(buttonId, inputId) {
   const button = document.getElementById(buttonId);
   const input = document.getElementById(inputId);
@@ -541,7 +464,24 @@ function setupPasswordToggle(buttonId, inputId) {
   });
 }
 
-// ---------- PASSWORD EVALUATION ----------
+// Global data-target based toggles (for reset fields etc.)
+document.querySelectorAll(".password-toggle").forEach((btn) => {
+  const targetId = btn.getAttribute("data-target");
+  if (!targetId) return;
+  const input = document.getElementById(targetId);
+  if (!input) return;
+
+  btn.addEventListener("click", () => {
+    const dict = i18n[currentLang];
+    const isHidden = input.type === "password";
+    input.type = isHidden ? "text" : "password";
+    btn.textContent = isHidden ? dict.hide : dict.show;
+  });
+});
+
+// =========================
+// PASSWORD EVALUATION
+// =========================
 function evaluatePassword(password) {
   const minLength = 8;
   const hasEnglish = /[A-Za-z]/.test(password);
@@ -574,19 +514,21 @@ function evaluatePassword(password) {
   };
 }
 
-// ---------- STRENGTH UI (REGISTER) ----------
-function updateStrengthUI(password) {
-  const dict = i18n[currentLang].strength;
+// =========================
+// REGISTER STRENGTH UI
+// =========================
+function updateRegisterStrengthUI(password) {
+  if (!regStrengthBar || !regStrengthLabel || !passwordRequirements) return;
+
+  const dictStrength = i18n[currentLang].strength;
   const result = evaluatePassword(password);
   const score = result.score;
 
-  const reqBox = document.getElementById("passwordRequirements");
-
   if (!password) {
-    regStrengthBar.style.width = "0";
+    regStrengthBar.style.width = "0%";
     regStrengthBar.style.background = "transparent";
     regStrengthLabel.textContent = "";
-    if (reqBox) reqBox.textContent = "";
+    passwordRequirements.textContent = "";
     return;
   }
 
@@ -594,16 +536,16 @@ function updateStrengthUI(password) {
   let color = "var(--danger)";
 
   if (score === 100) {
-    label = dict.complete;
+    label = dictStrength.complete;
     color = "var(--success)";
   } else if (score <= 33) {
-    label = dict.weak;
+    label = dictStrength.weak;
     color = "var(--danger)";
   } else if (score <= 66) {
-    label = dict.medium;
+    label = dictStrength.medium;
     color = "var(--warning)";
   } else {
-    label = dict.strong;
+    label = dictStrength.strong;
     color = "var(--success)";
   }
 
@@ -611,38 +553,23 @@ function updateStrengthUI(password) {
   regStrengthBar.style.background = color;
   regStrengthLabel.textContent = label;
 
-  if (reqBox) {
-    if (score === 100) {
-      reqBox.textContent = "";
-    } else {
-      const hints = {
-        length: currentLang === "he" ? "אורך" : "length",
-        number: currentLang === "he" ? "מספר" : "number",
-        symbol: currentLang === "he" ? "סימן" : "symbol",
-        uppercase: currentLang === "he" ? "אות גדולה" : "uppercase"
-      };
-
-      const missingText = result.missing.map(k => hints[k]).join(", ");
-      reqBox.textContent =
-        (currentLang === "he" ? "חסר: " : "Missing: ") + missingText;
-    }
+  if (score === 100) {
+    passwordRequirements.textContent = "";
+  } else {
+    const hints = {
+      length: currentLang === "he" ? "אורך" : "length",
+      number: currentLang === "he" ? "מספר" : "number",
+      symbol: currentLang === "he" ? "סימן" : "symbol",
+      uppercase: currentLang === "he" ? "אות גדולה" : "uppercase"
+    };
+    const missingText = result.missing.map((k) => hints[k]).join(", ");
+    passwordRequirements.textContent =
+      (currentLang === "he" ? "חסר: " : "Missing: ") + missingText;
   }
 }
-
-if (regPassword) {
-  regPassword.addEventListener("input", (e) => {
-    updateStrengthUI(e.target.value);
-    updateRegisterButtonState();
-  });
-}
-if (regConfirmPassword) {
-  regConfirmPassword.addEventListener("input", updateRegisterButtonState);
-}
-if (regTerms) {
-  regTerms.addEventListener("change", updateRegisterButtonState);
-}
-
-// ---------- REGISTER BUTTON STATE ----------
+// =========================
+// REGISTER BUTTON STATE
+// =========================
 function updateRegisterButtonState() {
   const password = regPassword.value;
   const confirm = regConfirmPassword.value;
@@ -660,7 +587,22 @@ function updateRegisterButtonState() {
   }
 }
 
-// ---------- REGISTER FLOW ----------
+if (regPassword) {
+  regPassword.addEventListener("input", (e) => {
+    updateRegisterStrengthUI(e.target.value);
+    updateRegisterButtonState();
+  });
+}
+if (regConfirmPassword) {
+  regConfirmPassword.addEventListener("input", updateRegisterButtonState);
+}
+if (regTerms) {
+  regTerms.addEventListener("change", updateRegisterButtonState);
+}
+
+// =========================
+// REGISTER FLOW
+// =========================
 registerForm.addEventListener("submit", async (e) => {
   e.preventDefault();
   regMessages.textContent = "";
@@ -699,20 +641,131 @@ registerForm.addEventListener("submit", async (e) => {
       body: JSON.stringify({ email, password, lang: currentLang })
     });
 
-    if (!res.ok) {
-      throw new Error("start-register failed");
-    }
+    if (!res.ok) throw new Error();
 
     openVerifyModal(email);
-  } catch (err) {
-    console.error(err);
+  } catch {
     regMessages.textContent = dict.regStartError;
   } finally {
     btn.disabled = false;
   }
 });
 
-// ---------- LOGIN FLOW ----------
+// =========================
+// OPEN VERIFY MODAL
+// =========================
+function openVerifyModal(email) {
+  const dict = i18n[currentLang];
+  pendingRegisterEmail = email;
+
+  verifyTitle.textContent = dict.regVerifyTitle;
+  verifyMessage.textContent = dict.regVerifyPrompt;
+  verifyCodeInput.value = "";
+  verifyMessages.textContent = "";
+  verifyBackdrop.hidden = false;
+
+  startRegisterResendCooldown();
+  verifyCodeInput.focus();
+}
+
+function closeVerifyModal() {
+  verifyBackdrop.hidden = true;
+  pendingRegisterEmail = "";
+}
+
+verifyClose.addEventListener("click", closeVerifyModal);
+verifyBackdrop.addEventListener("click", (e) => {
+  if (e.target === verifyBackdrop) closeVerifyModal();
+});
+
+// =========================
+// REGISTER RESEND COOLDOWN
+// =========================
+function startRegisterResendCooldown() {
+  resendSecondsLeft = 180;
+  const resendBtn = document.getElementById("resendCode");
+  const resendCountdown = document.getElementById("resendCountdown");
+
+  if (resendBtn) resendBtn.classList.add("disabled");
+  if (resendCountdown) {
+    const m = Math.floor(resendSecondsLeft / 60);
+    const s = resendSecondsLeft % 60;
+    resendCountdown.textContent = `${m}:${s.toString().padStart(2, "0")}`;
+  }
+
+  if (resendTimerInterval) clearInterval(resendTimerInterval);
+  resendTimerInterval = setInterval(() => {
+    resendSecondsLeft--;
+    if (resendCountdown) {
+      const m = Math.floor(resendSecondsLeft / 60);
+      const s = resendSecondsLeft % 60;
+      resendCountdown.textContent = `${m}:${s.toString().padStart(2, "0")}`;
+    }
+
+    if (resendSecondsLeft <= 0) {
+      clearInterval(resendTimerInterval);
+      resendTimerInterval = null;
+      if (resendBtn) resendBtn.classList.remove("disabled");
+      if (resendCountdown) resendCountdown.textContent = "";
+    }
+  }, 1000);
+}
+
+// =========================
+// AUTO-SUBMIT VERIFY CODE
+// =========================
+verifyCodeInput.addEventListener("input", () => {
+  verifyMessages.textContent = "";
+  if (/^\d{6}$/.test(verifyCodeInput.value)) {
+    verifySubmit.click();
+  }
+});
+
+// =========================
+// VERIFY REGISTER
+// =========================
+verifySubmit.addEventListener("click", async () => {
+  const dict = i18n[currentLang];
+  verifyMessages.textContent = "";
+
+  const code = verifyCodeInput.value.trim();
+  if (!pendingRegisterEmail || !code) {
+    verifyMessages.textContent = dict.regVerifyError;
+    return;
+  }
+
+  verifySubmit.disabled = true;
+
+  try {
+    const res = await fetch("/api/auth/verify-register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: pendingRegisterEmail, code })
+    });
+
+    if (!res.ok) throw new Error();
+
+    const data = await res.json();
+    if (!data.success) {
+      verifyMessages.textContent = dict.regVerifyError;
+      return;
+    }
+
+    verifyBackdrop.classList.add("verify-success");
+    setTimeout(() => {
+      window.location.href = "dashboard.html";
+    }, 900);
+
+  } catch {
+    verifyMessages.textContent = dict.regVerifyError;
+  } finally {
+    verifySubmit.disabled = false;
+  }
+});
+
+// =========================
+// LOGIN FLOW
+// =========================
 loginForm.addEventListener("submit", async (e) => {
   e.preventDefault();
   loginMessages.textContent = "";
@@ -733,9 +786,7 @@ loginForm.addEventListener("submit", async (e) => {
       body: JSON.stringify({ email, password })
     });
 
-    if (!res.ok) {
-      throw new Error("login failed");
-    }
+    if (!res.ok) throw new Error();
 
     const data = await res.json();
     if (!data.success) {
@@ -750,230 +801,277 @@ loginForm.addEventListener("submit", async (e) => {
     }
 
     window.location.href = "dashboard.html";
-  } catch (err) {
-    console.error(err);
+  } catch {
     loginMessages.textContent = dict.loginError;
   }
 });
 
-// ---------- FORGOT PASSWORD → OPEN RESET UI ----------
-const forgotPasswordBtn = document.getElementById("forgotPassword");
-if (forgotPasswordBtn) {
-  forgotPasswordBtn.addEventListener("click", () => {
-    toggleResetUI(true);
-  });
-}
-
-// ---------- RESET FLOW ----------
-
-function resetToStartState() {
-  resetFlowStep = "START";
-  if (resetEmailInput) resetEmailInput.style.display = "block";
-  if (resetCodeInput) {
-    resetCodeInput.style.display = "none";
-    resetCodeInput.value = "";
-  }
-  if (resetPasswordWrapper) {
-    resetPasswordWrapper.style.display = "none";
-    if (resetNewPassword) resetNewPassword.value = "";
-    if (resetConfirmPassword) resetConfirmPassword.value = "";
-  }
-  if (resetResendWrapper) resetResendWrapper.style.display = "none";
-  if (resetResendCountdown) resetResendCountdown.textContent = "";
-  if (resetResendBtn) resetResendBtn.disabled = true;
-
-  const dict = i18n[currentLang];
-  if (resetStatusMsg) resetStatusMsg.textContent = dict.resetStatusStart;
-  if (resetMainBtn) resetMainBtn.textContent = dict.resetSendCode;
-
-  if (resetCooldownInterval) {
-    clearInterval(resetCooldownInterval);
-    resetCooldownInterval = null;
-  }
-}
-
-function toggleResetUI(show) {
-  if (!resetInitView || !resetFormView) return;
-
-  // Show reset UI, hide login form
-  if (show) {
-    setActiveTab("login"); // keep login tab active visually
-    loginForm.classList.remove("active");
-    resetInitView.style.display = "none";
-    resetFormView.style.display = "block";
-    resetToStartState();
-    if (resetEmailInput && loginEmail) {
-      resetEmailInput.value = loginEmail.value;
+// =========================
+// AUTO-PASTE VERIFICATION CODE
+// =========================
+async function tryAutoPasteVerifyCode() {
+  try {
+    const text = await navigator.clipboard.readText();
+    if (/^\d{6}$/.test(text.trim())) {
+      verifyCodeInput.value = text.trim();
     }
-  } else {
-    resetFormView.style.display = "none";
-    resetInitView.style.display = "none";
-    loginForm.classList.add("active");
-    resetToStartState();
+  } catch {}
+}
+
+window.addEventListener("focus", tryAutoPasteVerifyCode);
+// =========================
+// RESET MODAL OPEN/CLOSE
+// =========================
+function openResetModal() {
+  const dict = i18n[currentLang];
+
+  resetStep = "email";
+  resetEmail = "";
+
+  resetTitle.textContent = dict.resetTitleEmail;
+  resetMessage.textContent = dict.resetMessageEmail;
+
+  resetStepEmail.style.display = "block";
+  resetStepCode.style.display = "none";
+  resetStepPassword.style.display = "none";
+
+  resetEmailInput.value = "";
+  resetCodeInput.value = "";
+  resetNewPassword.value = "";
+  resetConfirmPassword.value = "";
+
+  resetCodeMessages.textContent = "";
+  resetPasswordMessages.textContent = "";
+  resetPasswordRequirements.textContent = "";
+  resetStrengthBar.style.width = "0%";
+  resetStrengthLabel.textContent = "";
+
+  resetBackBtn.style.display = "none";
+  resetPrimaryBtn.textContent = dict.resetContinue;
+
+  resetBackdrop.hidden = false;
+  resetEmailInput.focus();
+}
+
+function closeResetModal() {
+  resetBackdrop.hidden = true;
+}
+
+resetClose.addEventListener("click", closeResetModal);
+
+// =========================
+// DO NOT CLOSE ON BACKDROP CLICK
+// =========================
+resetBackdrop.addEventListener("click", (e) => {
+  // Intentionally empty — backdrop click does nothing
+});
+
+// =========================
+// OPEN FROM "FORGOT PASSWORD?"
+// =========================
+forgotPasswordBtn.addEventListener("click", openResetModal);
+
+// =========================
+// RESET STEP SWITCHING
+// =========================
+function goToResetStep(step) {
+  const dict = i18n[currentLang];
+  resetStep = step;
+
+  if (step === "email") {
+    resetTitle.textContent = dict.resetTitleEmail;
+    resetMessage.textContent = dict.resetMessageEmail;
+
+    resetStepEmail.style.display = "block";
+    resetStepCode.style.display = "none";
+    resetStepPassword.style.display = "none";
+
+    resetBackBtn.style.display = "none";
+    resetPrimaryBtn.textContent = dict.resetContinue;
+
+    resetEmailInput.focus();
+  }
+
+  if (step === "code") {
+    resetTitle.textContent = dict.resetTitleCode;
+    resetMessage.textContent = dict.resetMessageCode;
+
+    resetStepEmail.style.display = "none";
+    resetStepCode.style.display = "block";
+    resetStepPassword.style.display = "none";
+
+    resetBackBtn.style.display = "block";
+    resetPrimaryBtn.textContent = dict.resetContinue;
+
+    resetCodeInput.focus();
+  }
+
+  if (step === "password") {
+    resetTitle.textContent = dict.resetTitlePassword;
+    resetMessage.textContent = dict.resetMessagePassword;
+
+    resetStepEmail.style.display = "none";
+    resetStepCode.style.display = "none";
+    resetStepPassword.style.display = "block";
+
+    resetBackBtn.style.display = "block";
+    resetPrimaryBtn.textContent = dict.resetUpdateLogin;
+
+    resetNewPassword.focus();
   }
 }
 
-async function executeResetFlow() {
+// =========================
+// RESET BACK BUTTON
+// =========================
+resetBackBtn.addEventListener("click", () => {
+  if (resetStep === "code") goToResetStep("email");
+  else if (resetStep === "password") goToResetStep("code");
+});
+
+// =========================
+// RESET PRIMARY BUTTON
+// =========================
+resetPrimaryBtn.addEventListener("click", async () => {
+  if (resetStep === "email") return handleResetEmail();
+  if (resetStep === "code") return handleResetCode();
+  if (resetStep === "password") return handleResetPassword();
+});
+
+// =========================
+// STEP 1 — SEND RESET EMAIL
+// =========================
+async function handleResetEmail() {
   const dict = i18n[currentLang];
-  if (!resetEmailInput || !resetMainBtn || !resetStatusMsg) return;
-
   const email = resetEmailInput.value.trim();
-  const btn = resetMainBtn;
-  const msg = resetStatusMsg;
 
-  if (!email) return;
+  if (!email || !email.includes("@")) {
+    resetPasswordMessages.textContent = dict.resetInvalidEmail;
+    return;
+  }
 
-  if (resetFlowStep === "START") {
-    btn.textContent = dict.sending;
+  resetPrimaryBtn.disabled = true;
 
+  try {
     const res = await fetch("/api/auth/start-reset", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, lang: currentLang })
     });
 
-    if (res.ok) {
-      resetFlowStep = "VERIFY";
+    if (!res.ok) throw new Error();
 
-      msg.textContent = dict.resetStatusSent;
+    resetEmail = email;
+    startResetResendCooldown();
+    goToResetStep("code");
+  } catch {
+    resetPasswordMessages.textContent = dict.resetStartError;
+  } finally {
+    resetPrimaryBtn.disabled = false;
+  }
+}
 
-      resetEmailInput.style.display = "none";
-      if (resetCodeInput) resetCodeInput.style.display = "block";
-      if (resetPasswordWrapper) resetPasswordWrapper.style.display = "block";
+// =========================
+// STEP 2 — VERIFY RESET CODE
+// =========================
+async function handleResetCode() {
+  const dict = i18n[currentLang];
+  const code = resetCodeInput.value.trim();
 
-      btn.textContent = dict.resetUpdateLogin;
+  if (!/^\d{6}$/.test(code)) {
+    resetCodeMessages.textContent = dict.resetCodeError;
+    return;
+  }
 
-      startResetCooldown();
-    } else {
-      btn.textContent = dict.tryAgain;
-    }
-  } else {
-    if (!resetCodeInput || !resetNewPassword || !resetConfirmPassword) return;
+  resetPrimaryBtn.disabled = true;
 
-    const code = resetCodeInput.value.trim();
-    const newPassword = resetNewPassword.value;
-    const confirm = resetConfirmPassword.value;
-
-    if (!code || !newPassword || newPassword !== confirm) return;
-
-    const evaluation = evaluatePassword(newPassword);
-    if (!evaluation.valid) {
-      msg.textContent = dict.regPasswordInvalid;
-      return;
-    }
-
-    const res = await fetch("/api/auth/verify-reset", {
+  try {
+    const res = await fetch("/api/auth/verify-reset-code", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, code, newPassword })
+      body: JSON.stringify({ email: resetEmail, code })
     });
 
+    if (!res.ok) throw new Error();
+
     const data = await res.json();
-    if (data.success) {
-      window.location.href = "dashboard.html";
-    } else {
-      msg.textContent = data.reason || dict.invalidCode;
-    }
-  }
-}
-
-// Auto-submit reset code on 6 digits
-if (resetCodeInput) {
-  resetCodeInput.addEventListener("input", (e) => {
-    if (/^\d{6}$/.test(e.target.value)) {
-      executeResetFlow();
-    }
-  });
-
-  resetCodeInput.addEventListener("paste", (e) => {
-    const text = (e.clipboardData || window.clipboardData).getData("text");
-    if (/^\d{6}$/.test(text.trim())) {
-      e.preventDefault();
-      e.target.value = text.trim();
-      executeResetFlow();
-    }
-  });
-}
-
-// Strength meter for reset (same rules as register)
-if (resetNewPassword && resetStrength) {
-  const resetBar = resetStrength.querySelector(".bar");
-  const resetReqBoxId = "resetPasswordRequirements";
-
-  // create requirements box dynamically if you want, or reuse same logic
-  resetNewPassword.addEventListener("input", (e) => {
-    const password = e.target.value;
-    const dictStrength = i18n[currentLang].strength;
-    const result = evaluatePassword(password);
-    const score = result.score;
-
-    if (resetBar) {
-      if (!password) {
-        resetBar.style.width = "0";
-        resetBar.style.background = "transparent";
-      } else {
-        let color = "var(--danger)";
-        if (score === 100) color = "var(--success)";
-        else if (score <= 33) color = "var(--danger)";
-        else if (score <= 66) color = "var(--warning)";
-        else color = "var(--success)";
-
-        resetBar.style.width = score + "%";
-        resetBar.style.background = color;
-      }
-    }
-
-    // Optional: separate requirements box for reset
-    let reqBox = document.getElementById(resetReqBoxId);
-    if (!reqBox) {
-      reqBox = document.createElement("div");
-      reqBox.id = resetReqBoxId;
-      reqBox.className = "password-help";
-      resetStrength.insertAdjacentElement("beforebegin", reqBox);
-    }
-
-    if (!password) {
-      reqBox.textContent = "";
+    if (!data.success) {
+      resetCodeMessages.textContent = dict.resetCodeError;
       return;
     }
 
-    if (score === 100) {
-      reqBox.textContent = "";
-    } else {
-      const hints = {
-        length: currentLang === "he" ? "אורך" : "length",
-        number: currentLang === "he" ? "מספר" : "number",
-        symbol: currentLang === "he" ? "סימן" : "symbol",
-        uppercase: currentLang === "he" ? "אות גדולה" : "uppercase"
-      };
-
-      const missingText = result.missing.map(k => hints[k]).join(", ");
-      reqBox.textContent =
-        (currentLang === "he" ? "חסר: " : "Missing: ") + missingText;
-    }
-  });
-
-  if (resetConfirmPassword) {
-    resetConfirmPassword.addEventListener("input", () => {
-      // no button state here, but we could add visual mismatch indicator if needed
-    });
+    goToResetStep("password");
+  } catch {
+    resetCodeMessages.textContent = dict.resetCodeError;
+  } finally {
+    resetPrimaryBtn.disabled = false;
   }
 }
 
-// Resend cooldown for reset
-function startResetCooldown() {
-  if (!resetResendWrapper || !resetResendBtn || !resetResendCountdown) return;
+// =========================
+// STEP 3 — SET NEW PASSWORD
+// =========================
+async function handleResetPassword() {
+  const dict = i18n[currentLang];
 
-  resetResendWrapper.style.display = "block";
+  const pass = resetNewPassword.value;
+  const confirm = resetConfirmPassword.value;
+
+  const evaluation = evaluatePassword(pass);
+  if (!evaluation.valid) {
+    resetPasswordMessages.textContent = dict.resetPasswordInvalid;
+    return;
+  }
+
+  if (pass !== confirm) {
+    resetPasswordMessages.textContent = dict.resetPasswordMismatch;
+    return;
+  }
+
+  resetPrimaryBtn.disabled = true;
+
+  try {
+    const res = await fetch("/api/auth/finish-reset", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: resetEmail, password: pass })
+    });
+
+    if (!res.ok) throw new Error();
+
+    const data = await res.json();
+    if (!data.success) {
+      resetPasswordMessages.textContent = dict.resetPasswordError;
+      return;
+    }
+
+    resetPasswordMessages.textContent = dict.resetPasswordSuccess;
+
+    setTimeout(() => {
+      window.location.href = "dashboard.html";
+    }, 900);
+  } catch {
+    resetPasswordMessages.textContent = dict.resetPasswordError;
+  } finally {
+    resetPrimaryBtn.disabled = false;
+  }
+}
+
+// =========================
+// RESET RESEND COOLDOWN
+// =========================
+function startResetResendCooldown() {
+  const dict = i18n[currentLang];
+
   resetSecondsLeft = 180;
   resetResendBtn.disabled = true;
-
-  resetResendCountdown.textContent = `${resetSecondsLeft}s`;
+  resetResendCountdown.textContent = formatResetTime(resetSecondsLeft);
 
   if (resetCooldownInterval) clearInterval(resetCooldownInterval);
+
   resetCooldownInterval = setInterval(() => {
     resetSecondsLeft--;
-    resetResendCountdown.textContent = `${resetSecondsLeft}s`;
+    resetResendCountdown.textContent = formatResetTime(resetSecondsLeft);
 
     if (resetSecondsLeft <= 0) {
       clearInterval(resetCooldownInterval);
@@ -984,105 +1082,112 @@ function startResetCooldown() {
   }, 1000);
 }
 
-if (resetResendBtn) {
-  resetResendBtn.addEventListener("click", async () => {
-    if (!resetEmailInput) return;
-    const email = resetEmailInput.value.trim();
-    if (!email) return;
+function formatResetTime(sec) {
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  return `${m}:${s.toString().padStart(2, "0")}`;
+}
 
-    await fetch("/api/auth/start-reset", {
+// =========================
+// RESEND RESET CODE
+// =========================
+resetResendBtn.addEventListener("click", async () => {
+  const dict = i18n[currentLang];
+
+  if (!resetEmail) return;
+
+  resetResendBtn.disabled = true;
+
+  try {
+    const res = await fetch("/api/auth/start-reset", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, lang: currentLang })
+      body: JSON.stringify({ email: resetEmail, lang: currentLang })
     });
 
-    startResetCooldown();
-  });
-}
+    if (!res.ok) throw new Error();
 
-// ---------- INIT ----------
-function init() {
-  modalBackdrop.hidden = true;
-  termsBackdrop.hidden = true;
-  verifyBackdrop.hidden = true;
-
-  const savedTheme = localStorage.getItem("themeMode");
-  setMode(savedTheme === "dark" ? "dark" : "light");
-
-  const savedLang = localStorage.getItem("authLang");
-  setLanguage(savedLang === "he" ? "he" : "en");
-
-  const rememberedEmail = localStorage.getItem("rememberedEmail");
-  if (rememberedEmail) {
-    loginEmail.value = rememberedEmail;
-    setActiveTab("login");
-  } else {
-    setActiveTab("register");
+    startResetResendCooldown();
+  } catch {
+    resetCodeMessages.textContent = dict.resetStartError;
+    resetResendBtn.disabled = false;
   }
-
-  updateStrengthUI("");
-  updateRegisterButtonState();
-}
-
-document.addEventListener("DOMContentLoaded", init);
-
-// ---------- PASSWORD TOGGLE SETUP ----------
-setupPasswordToggle("regPasswordToggle", "regPassword");
-setupPasswordToggle("regConfirmPasswordToggle", "regConfirmPassword");
-setupPasswordToggle("loginPasswordToggle", "loginPassword");
-
-// Also apply toggle behavior to reset password fields (they use data-target only)
-document.querySelectorAll(".password-toggle").forEach(btn => {
-  const targetId = btn.getAttribute("data-target");
-  if (!targetId) return;
-  const input = document.getElementById(targetId);
-  if (!input) return;
-
-  btn.addEventListener("click", () => {
-    const dict = i18n[currentLang];
-    const isHidden = input.type === "password";
-    input.type = isHidden ? "text" : "password";
-    btn.textContent = isHidden ? dict.hide : dict.show;
-  });
 });
 
-/**
- * Auto-detect return from email and auto-fill verification code
- */
-const handleEmailVerificationReturn = async () => {
-  const urlParams = new URLSearchParams(window.location.search);
-
-  if (urlParams.get('verify') === 'true') {
-    if (typeof openRegisterPopup === 'function') {
-      openRegisterPopup();
-    }
-
-    setTimeout(async () => {
-      const inputField = document.getElementById('verification-input');
-      if (!inputField) return;
-
-      try {
-        const text = await navigator.clipboard.readText();
-        if (/^\d{6}$/.test(text.trim())) {
-          inputField.value = text.trim();
-          console.log("Auto-pasted code from clipboard.");
-        } else {
-          const backupCode = localStorage.getItem('pending_verification_code');
-          if (backupCode) {
-            inputField.value = backupCode;
-            localStorage.removeItem('pending_verification_code');
-          }
-        }
-      } catch (err) {
-        const backupCode = localStorage.getItem('pending_verification_code');
-        if (backupCode) {
-          inputField.value = backupCode;
-          localStorage.removeItem('pending_verification_code');
-        }
-      }
-    }, 500);
+// =========================
+// AUTO-SUBMIT RESET CODE
+// =========================
+resetCodeInput.addEventListener("input", () => {
+  resetCodeMessages.textContent = "";
+  if (/^\d{6}$/.test(resetCodeInput.value)) {
+    resetPrimaryBtn.click();
   }
-};
+});
 
-window.addEventListener('DOMContentLoaded', handleEmailVerificationReturn);
-window.addEventListener('focus', handleEmailVerificationReturn);
+// =========================
+// AUTO-PASTE RESET CODE
+// =========================
+async function tryAutoPasteResetCode() {
+  try {
+    const text = await navigator.clipboard.readText();
+    if (/^\d{6}$/.test(text.trim())) {
+      resetCodeInput.value = text.trim();
+    }
+  } catch {}
+}
+
+window.addEventListener("focus", tryAutoPasteResetCode);
+
+// =========================
+// RESET PASSWORD STRENGTH UI
+// =========================
+resetNewPassword.addEventListener("input", () => {
+  const pass = resetNewPassword.value;
+  const dictStrength = i18n[currentLang].strength;
+
+  const result = evaluatePassword(pass);
+  const score = result.score;
+
+  if (!pass) {
+    resetStrengthBar.style.width = "0%";
+    resetStrengthBar.style.background = "transparent";
+    resetStrengthLabel.textContent = "";
+    resetPasswordRequirements.textContent = "";
+    return;
+  }
+
+  let label = "";
+  let color = "var(--danger)";
+
+  if (score === 100) {
+    label = dictStrength.complete;
+    color = "var(--success)";
+  } else if (score <= 33) {
+    label = dictStrength.weak;
+    color = "var(--danger)";
+  } else if (score <= 66) {
+    label = dictStrength.medium;
+    color = "var(--warning)";
+  } else {
+    label = dictStrength.strong;
+    color = "var(--success)";
+  }
+
+  resetStrengthBar.style.width = score + "%";
+  resetStrengthBar.style.background = color;
+  resetStrengthLabel.textContent = label;
+
+  if (score === 100) {
+    resetPasswordRequirements.textContent = "";
+  } else {
+    const hints = {
+      length: currentLang === "he" ? "אורך" : "length",
+      number: currentLang === "he" ? "מספר" : "number",
+      symbol: currentLang === "he" ? "סימן" : "symbol",
+      uppercase: currentLang === "he" ? "אות גדולה" : "uppercase"
+    };
+    const missingText = result.missing.map((k) => hints[k]).join(", ");
+    resetPasswordRequirements.textContent =
+      (currentLang === "he" ? "חסר: " : "Missing: ") + missingText;
+  }
+});
