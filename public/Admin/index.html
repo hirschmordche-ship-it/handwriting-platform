@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Admin Dashboard</title>
+  <link rel="stylesheet" href="admin.css" />
+</head>
+<body class="theme-light">
+  <header class="admin-header">
+    <div class="admin-tabs">
+      <button class="admin-tab active" data-lang="en">English Glyphs</button>
+      <button class="admin-tab" data-lang="he">Hebrew Glyphs</button>
+    </div>
+
+    <div class="admin-header-right">
+      <!-- Hook this into your existing theme toggle logic -->
+      <button id="themeToggle">Toggle Theme</button>
+    </div>
+  </header>
+
+  <main class="admin-main">
+    <section class="user-list-panel">
+      <div class="user-list-header">
+        <input
+          type="text"
+          id="userSearch"
+          placeholder="Search users..."
+        />
+      </div>
+      <ul id="userList" class="user-list"></ul>
+    </section>
+
+    <section class="user-details-panel">
+      <div id="userSummary" class="user-summary empty-state">
+        Select a user to view details.
+      </div>
+
+      <div class="user-details-sections hidden" id="userDetailsSections">
+        <div class="user-details-top">
+          <h2 id="userEmail"></h2>
+          <p id="userRole"></p>
+          <p id="userStatus"></p>
+        </div>
+
+        <div class="user-glyphs-controls">
+          <button class="glyph-view-toggle active" data-mode="letters">
+            Show by letter
+          </button>
+          <button class="glyph-view-toggle" data-mode="all">
+            Show all glyphs
+          </button>
+        </div>
+
+        <div id="glyphsByLetter" class="glyphs-by-letter"></div>
+        <div id="glyphsAll" class="glyphs-all hidden"></div>
+      </div>
+    </section>
+  </main>
+
+  <script src="/api/auth/supabase-client-placeholder.js"></script>
+  <script src="admin.js" type="module"></script>
+</body>
+</html>
