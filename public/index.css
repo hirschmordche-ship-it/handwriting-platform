@@ -1073,3 +1073,41 @@ body.rtl #resetResendRow {
   opacity: 1;
   pointer-events: auto;
 }
+
+/* =========================================
+   FIX: Remove large vertical gaps in reset modal
+========================================= */
+
+/* Reduce modal-body spacing */
+#resetBackdrop .modal-body {
+  gap: 10px !important;
+  padding-top: 14px !important;
+  padding-bottom: 14px !important;
+}
+
+/* Remove extra spacing between steps */
+#resetStepEmail,
+#resetStepCode,
+#resetStepPassword {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* Tighten spacing around inputs */
+#resetBackdrop input.auth-input,
+#resetBackdrop .verify-code-input {
+  margin: 4px 0 !important;
+}
+
+/* Tighten spacing for strength meter + requirements */
+#resetStrengthLabel,
+#resetPasswordRequirements {
+  margin-top: 2px !important;
+}
+
+/* Reduce footer spacing */
+#resetBackdrop .modal-footer {
+  padding-top: 10px !important;
+  padding-bottom: 14px !important;
+  gap: 8px !important;
+}
