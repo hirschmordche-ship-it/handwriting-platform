@@ -1,103 +1,120 @@
-// Phase 1: structure + basic behavior
+// public/Admin/admin.js
 
-// Simple theme toggle hook – wire this into your real theme logic
-const themeToggleBtn = document.getElementById("themeToggle");
-if (themeToggleBtn) {
-  themeToggleBtn.addEventListener("click", () => {
-    document.body.classList.toggle("theme-dark");
-    document.body.classList.toggle("theme-light");
-  });
-}
-
-// Elements
-const tabs = document.querySelectorAll(".admin-tab");
-const userListEl = document.getElementById("userList");
-const userSearchEl = document.getElementById("userSearch");
-const userSummaryEl = document.getElementById("userSummary");
-const userDetailsSectionsEl = document.getElementById("userDetailsSections");
-const userEmailEl = document.getElementById("userEmail");
-const userRoleEl = document.getElementById("userRole");
-const userStatusEl = document.getElementById("userStatus");
-const glyphViewToggles = document.querySelectorAll(".glyph-view-toggle");
-const glyphsByLetterEl = document.getElementById("glyphsByLetter");
-const glyphsAllEl = document.getElementById("glyphsAll");
-
-let currentLang = "en";
-let allUsers = [];
+let users = [];
 let filteredUsers = [];
 let selectedUserId = null;
-let currentGlyphViewMode = "letters"; // "letters" | "all"
+let currentLang = "en"; // "en" or "he"
+let currentTab = "users"; // "users" | "glyphs"
 
-// FRONTEND GUARD (Phase 1: placeholder – real check is via backend routes)
-// You already protect admin via backend; later we can add a real session check here if needed.
+const userListEl = document.getElementById("user-list");
+const userEmailEl = document.getElementById("user-email");
+const userRoleEl = document.getElementById("user-role");
+const userStatusEl = document.getElementById("user-status");
+const glyphsContainerEl = document.getElementById("glyphs-container");
+const tabUsersEl = document.getElementById("tab-users");
+const tabGlyphsEl = document.getElementById("tab-glyphs");
+const langToggleEnEl = document.getElementById("lang-toggle-en");
+const langToggleHeEl = document.getElementById("lang-toggle-he");
+const searchInputEl = document.getElementById("user-search");
 
-init();
+// ---------- INIT ----------
 
-async function init() {
-  await loadUsers();
-  setupTabSwitching();
-  setupUserSearch();
-  setupGlyphViewToggle();
-}
+document.addEventListener("DOMContentLoaded", () => {
+  setupTabHandlers();
+  setupLangToggle();
+  setupSearch();
+  loadUsers();
+});
 
-function setupTabSwitching() {
-  tabs.forEach((tab) => {
-    tab.addEventListener("click", () => {
-      tabs.forEach((t) => t.classList.remove("active"));
-      tab.classList.add("active");
-      currentLang = tab.dataset.lang; // "en" or "he"
-      if (selectedUserId) {
-        loadUserDetails(selectedUserId);
-      }
-    });
+// ---------- TABS ----------
+
+function setupTabHandlers() {
+  tabUsersEl.addEventListener("click", () => {
+    currentTab = "users";
+    tabUsersEl.classList.add("active");
+    tabGlyphsEl.classList.remove("active");
+    document.getElementById("users-panel").style.display = "block";
+    document.getElementById("glyphs-panel").style.display = "none";
+  });
+
+  tabGlyphsEl.addEventListener("click", () => {
+    currentTab = "glyphs";
+    tabGlyphsEl.classList.add("active");
+    tabUsersEl.classList.remove("active");
+    document.getElementById("users-panel").style.display = "none";
+    document.getElementById("glyphs-panel").style.display = "block";
+    if (selectedUserId) {
+      loadUserDetails(selectedUserId);
+    }
   });
 }
 
-function setupUserSearch() {
-  userSearchEl.addEventListener("input", () => {
-    const q = userSearchEl.value.toLowerCase().trim();
-    filteredUsers = allUsers.filter((u) =>
+// ---------- LANGUAGE TOGGLE ----------
+
+function setupLangToggle() {
+  langToggleEnEl.addEventListener("click", () => {
+    currentLang = "en";
+    langToggleEnEl.classList.add("active");
+    langToggleHeEl.classList.remove("active");
+    if (selectedUserId) loadUserDetails(selectedUserId);
+  });
+
+  langToggleHeEl.addEventListener("click", () => {
+    currentLang = "he";
+    langToggleHeEl.classList.add("active");
+    langToggleEnEl.classList.remove("active");
+    if (selectedUserId) loadUserDetails(selectedUserId);
+  });
+}
+
+// ---------- SEARCH ----------
+
+function setupSearch() {
+  searchInputEl.addEventListener("input", () => {
+    const q = searchInputEl.value.toLowerCase();
+    filteredUsers = users.filter((u) =>
       (u.email || "").toLowerCase().includes(q)
     );
     renderUserList();
   });
 }
 
-function setupGlyphViewToggle() {
-  glyphViewToggles.forEach((btn) => {
-    btn.addEventListener("click", () => {
-      glyphViewToggles.forEach((b) => b.classList.remove("active"));
-      btn.classList.add("active");
-      currentGlyphViewMode = btn.dataset.mode; // "letters" or "all"
-      if (selectedUserId) {
-        loadUserDetails(selectedUserId);
-      }
-    });
-  });
-}
+// ---------- LOAD USERS ----------
 
 async function loadUsers() {
   try {
-    const res = await fetch("/api/admin/list-users", {
-      method: "GET",
-      headers: { "Content-Type": "application/json" }
-    });
-
+    const res = await fetch("/api/admin/get-users");
     const data = await res.json();
     if (!data.success) {
       userListEl.innerHTML = `<li class="user-list-item">Failed to load users</li>`;
       return;
     }
 
-    allUsers = data.users || [];
-    filteredUsers = allUsers;
+    users = data.users || [];
+    filteredUsers = [...users];
+
     renderUserList();
+
+    if (users.length > 0) {
+      selectedUserId = users[0].id;
+      document
+        .querySelectorAll(".user-list-item")
+        .forEach((item) => item.classList.remove("active"));
+      const firstItem = document.querySelector(
+        `.user-list-item[data-user-id="${selectedUserId}"]`
+      );
+      if (firstItem) firstItem.classList.add("active");
+      loadUserDetails(selectedUserId);
+    }
   } catch (err) {
+    console.error("Error loading users:", err);
     userListEl.innerHTML = `<li class="user-list-item">Error loading users</li>`;
   }
 }
 
-function renderUserList() {
+// ---------- RENDER USER LIST (WITH COUNTS) ----------
+
+async function renderUserList() {
   userListEl.innerHTML = "";
 
   if (!filteredUsers.length) {
@@ -105,7 +122,7 @@ function renderUserList() {
     return;
   }
 
-  filteredUsers.forEach((user) => {
+  for (const user of filteredUsers) {
     const li = document.createElement("li");
     li.className = "user-list-item";
     li.dataset.userId = user.id;
@@ -120,10 +137,7 @@ function renderUserList() {
 
     const metaDiv = document.createElement("div");
     metaDiv.className = "user-list-meta";
-    metaDiv.innerHTML = `
-      <span>${user.role || "user"}</span>
-      <span>EN: ? | HE: ?</span>
-    `; // counts will be filled in Phase 2
+    metaDiv.textContent = "Loading counts...";
 
     li.appendChild(emailDiv);
     li.appendChild(metaDiv);
@@ -138,142 +152,147 @@ function renderUserList() {
     });
 
     userListEl.appendChild(li);
-  });
+
+    // Fetch glyph counts per user
+    try {
+      const res = await fetch(`/api/admin/get-glyph-counts?userId=${user.id}`);
+      const data = await res.json();
+      if (data.success) {
+        metaDiv.textContent = `EN: ${data.counts.en} | HE: ${data.counts.he}`;
+      } else {
+        metaDiv.textContent = "EN: ? | HE: ?";
+      }
+    } catch {
+      metaDiv.textContent = "EN: ? | HE: ?";
+    }
+  }
 }
+
+// ---------- LOAD USER DETAILS (GLYPHS + STATUS) ----------
 
 async function loadUserDetails(userId) {
   try {
-    userSummaryEl.classList.add("hidden");
-    userDetailsSectionsEl.classList.remove("hidden");
+    glyphsContainerEl.innerHTML = "Loading glyphs...";
 
-    const res = await fetch("/api/admin/get-user-details", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        userId,
-        language: currentLang
-      })
-    });
-
+    const res = await fetch(
+      `/api/admin/get-glyphs?userId=${userId}&language=${currentLang}`
+    );
     const data = await res.json();
+
     if (!data.success) {
-      userEmailEl.textContent = "Failed to load user";
-      userRoleEl.textContent = "";
-      userStatusEl.textContent = "";
-      glyphsByLetterEl.innerHTML = "";
-      glyphsAllEl.innerHTML = "";
+      glyphsContainerEl.textContent = "Failed to load glyphs";
       return;
     }
 
-    const user = data.user;
     const glyphs = data.glyphs || [];
+    const user = users.find((u) => u.id === userId);
 
-    userEmailEl.textContent = user.email || "(no email)";
-    userRoleEl.textContent = `Role: ${user.role || "user"}`;
-    userStatusEl.textContent = ""; // Phase 2: online/offline, last login, etc.
+    userEmailEl.textContent = user?.email || "(no email)";
+    userRoleEl.textContent = user?.role || "(no role)";
 
-    if (currentGlyphViewMode === "letters") {
-      renderGlyphsByLetter(glyphs);
-      glyphsByLetterEl.classList.remove("hidden");
-      glyphsAllEl.classList.add("hidden");
-    } else {
+    // Status + last login
+    await updateUserStatus(userId, glyphs.length);
+
+    // Render glyphs in current tab
+    if (currentTab === "glyphs") {
       renderGlyphsAll(glyphs);
-      glyphsByLetterEl.classList.add("hidden");
-      glyphsAllEl.classList.remove("hidden");
     }
   } catch (err) {
-    userEmailEl.textContent = "Error loading user";
-    userRoleEl.textContent = "";
-    userStatusEl.textContent = "";
-    glyphsByLetterEl.innerHTML = "";
-    glyphsAllEl.innerHTML = "";
+    console.error("Error loading user details:", err);
+    glyphsContainerEl.textContent = "Error loading glyphs";
   }
 }
 
-function renderGlyphsByLetter(glyphs) {
-  if (!glyphs.length) {
-    glyphsByLetterEl.innerHTML = `<p>No glyphs for this user in this language.</p>`;
-    return;
+// ---------- USER STATUS (ONLINE/OFFLINE + GLYPH COUNT) ----------
+
+async function updateUserStatus(userId, glyphCount) {
+  try {
+    const statusRes = await fetch(`/api/admin/get-user-status?userId=${userId}`);
+    const statusData = await statusRes.json();
+
+    let statusText = "";
+    if (statusData.success) {
+      const status = statusData.online ? "🟢 Online" : "⚪ Offline";
+      const lastLogin = statusData.lastLogin
+        ? new Date(statusData.lastLogin).toLocaleString()
+        : "Unknown";
+      statusText = `${status} — Last login: ${lastLogin}`;
+    } else {
+      statusText = "Status unknown";
+    }
+
+    const langLabel = currentLang === "en" ? "English" : "Hebrew";
+    statusText += `\n${glyphCount} ${langLabel} glyphs`;
+
+    userStatusEl.textContent = statusText;
+  } catch (err) {
+    console.error("Error fetching user status:", err);
+    userStatusEl.textContent = "Status error";
   }
-
-  const byLetter = {};
-  glyphs.forEach((g) => {
-    const letter = g.letter || "?"; // adjust field name if needed
-    if (!byLetter[letter]) byLetter[letter] = [];
-    byLetter[letter].push(g);
-  });
-
-  const letters = Object.keys(byLetter).sort();
-  const grid = document.createElement("div");
-  grid.className = "glyphs-by-letter-grid";
-
-  letters.forEach((letter) => {
-    const card = document.createElement("div");
-    card.className = "glyph-letter-card";
-
-    const letterSpan = document.createElement("span");
-    letterSpan.className = "glyph-letter";
-    letterSpan.textContent = letter;
-
-    const countSpan = document.createElement("span");
-    countSpan.className = "glyph-count";
-    countSpan.textContent = `${byLetter[letter].length} glyphs`;
-
-    card.appendChild(letterSpan);
-    card.appendChild(countSpan);
-
-    card.addEventListener("click", () => {
-      // Phase 2: show glyphs for this letter in a modal or detail view
-    });
-
-    grid.appendChild(card);
-  });
-
-  glyphsByLetterEl.innerHTML = "";
-  glyphsByLetterEl.appendChild(grid);
 }
+
+// ---------- RENDER ALL GLYPHS (FLAT LIST + DELETE) ----------
 
 function renderGlyphsAll(glyphs) {
   if (!glyphs.length) {
-    glyphsAllEl.innerHTML = `<p>No glyphs for this user in this language.</p>`;
+    glyphsContainerEl.textContent = "No glyphs for this user in this language.";
     return;
   }
 
-  glyphsAllEl.innerHTML = "";
+  glyphsContainerEl.innerHTML = "";
+
   glyphs.forEach((g) => {
-    const item = document.createElement("div");
-    item.className = "glyph-item";
+    const row = document.createElement("div");
+    row.className = "glyph-row";
 
-    const main = document.createElement("div");
-    main.className = "glyph-item-main";
-
-    const title = document.createElement("div");
-    title.textContent = g.letter || "(no letter)";
-
-    const meta = document.createElement("div");
-    meta.className = "glyph-item-meta";
-    meta.textContent = `Created: ${g.created_at || ""}`;
-
-    main.appendChild(title);
-    main.appendChild(meta);
+    const info = document.createElement("div");
+    info.className = "glyph-info";
+    const created = g.created_at
+      ? new Date(g.created_at).toLocaleString()
+      : "";
+    info.textContent = `Letter: ${g.letter || "?"} — Created: ${created}`;
 
     const actions = document.createElement("div");
-    actions.className = "glyph-item-actions";
+    actions.className = "glyph-actions";
 
-    const viewBtn = document.createElement("button");
-    viewBtn.textContent = "View";
-    // Phase 2: open glyph preview / details
+    const preview = document.createElement("div");
+    preview.className = "glyph-preview-placeholder";
+    preview.textContent = "Preview"; // Phase 3: canvas rendering
 
     const deleteBtn = document.createElement("button");
+    deleteBtn.className = "glyph-delete-btn";
     deleteBtn.textContent = "Delete";
-    // Phase 2: call delete glyph route
 
-    actions.appendChild(viewBtn);
+    deleteBtn.addEventListener("click", async () => {
+      const confirmed = confirm("Delete this glyph?");
+      if (!confirmed) return;
+
+      try {
+        const res = await fetch("/api/admin/delete-glyph", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ glyphId: g.id })
+        });
+
+        const result = await res.json();
+        if (result.success) {
+          alert("Glyph deleted");
+          loadUserDetails(selectedUserId);
+          loadUsers(); // refresh counts in list
+        } else {
+          alert("Failed to delete glyph");
+        }
+      } catch {
+        alert("Error deleting glyph");
+      }
+    });
+
+    actions.appendChild(preview);
     actions.appendChild(deleteBtn);
 
-    item.appendChild(main);
-    item.appendChild(actions);
+    row.appendChild(info);
+    row.appendChild(actions);
 
-    glyphsAllEl.appendChild(item);
+    glyphsContainerEl.appendChild(row);
   });
 }
