@@ -18,7 +18,6 @@
     <div class="auth-panel glass">
       <div class="auth-header">
         <div class="header-left">
-          <!-- Dark mode circular slider -->
           <button class="mode-toggle-circle" id="modeToggle" type="button" aria-label="Toggle dark mode">
             <div class="mode-toggle-track">
               <div class="mode-toggle-knob">
@@ -38,7 +37,6 @@
         </div>
 
         <div class="header-right">
-          <!-- Android-style language pill toggle -->
           <div class="lang-toggle-pill lang-en" id="langToggle" role="button" tabindex="0" aria-label="Toggle language">
             <div class="lang-toggle-thumb"></div>
             <span data-lang="en">EN</span>
@@ -89,18 +87,14 @@
               </button>
             </div>
 
-            <!-- Missing requirements (red) -->
             <div id="passwordRequirements" class="password-help" aria-live="polite"></div>
 
-            <!-- Strength meter -->
             <div class="strength-meter" aria-hidden="true">
               <div class="strength-bar" id="regStrengthBar" style="width:0%"></div>
             </div>
 
-            <!-- Strength label -->
             <div id="regStrengthLabel" class="password-help" aria-live="polite"></div>
 
-            <!-- Static help text (beneath everything) -->
             <div class="password-help" data-i18n="password.help">
               Minimum 8 characters, with numbers and symbols.
             </div>
@@ -220,7 +214,6 @@
         </form>
       </div>
 
-      <!-- FOOTER: same reference as terms, pointing to contactus.html -->
       <div class="footer" id="footerText">
         Need help? Contact us <a href="contactus.html">here</a>
       </div>
@@ -282,6 +275,125 @@
       <div class="modal-footer">
         <button type="button" class="primary-button" id="verifySubmit">
           Verify
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Reset password modal -->
+  <div class="modal-backdrop" id="resetBackdrop" hidden>
+    <div class="modal glass" role="dialog" aria-modal="true" aria-labelledby="resetTitle" aria-hidden="true">
+      <div class="modal-header">
+        <h3 id="resetTitle">Reset password</h3>
+        <button type="button" class="modal-close" id="resetClose" aria-label="Close">✕</button>
+      </div>
+      <div class="modal-body">
+        <!-- Step content will be controlled by JS -->
+        <p id="resetMessage"></p>
+
+        <!-- Step 1: email -->
+        <div id="resetStepEmail">
+          <input
+            id="resetEmailInput"
+            type="email"
+            class="auth-input"
+            autocomplete="email"
+            data-i18n-placeholder="resetEmailPlaceholder"
+            placeholder="you@example.com"
+          >
+        </div>
+
+        <!-- Step 2: code -->
+        <div id="resetStepCode" style="display:none;">
+          <input
+            id="resetCodeInput"
+            type="text"
+            maxlength="6"
+            inputmode="numeric"
+            autocomplete="one-time-code"
+            class="verify-code-input"
+            aria-label="Reset code"
+          >
+          <div class="form-messages" id="resetCodeMessages" aria-live="polite"></div>
+          <div class="reset-resend-row">
+            <button type="button" id="resetResendBtn" class="link-button" disabled>
+              <span data-i18n="resend">Resend code</span>
+            </button>
+            <span id="resetResendCountdown"></span>
+          </div>
+        </div>
+
+        <!-- Step 3: new password -->
+        <div id="resetStepPassword" style="display:none;">
+          <div class="field-group password-group">
+            <label for="resetNewPassword" data-i18n="reset.newPasswordLabel">New password</label>
+            <div class="password-wrapper">
+              <input
+                id="resetNewPassword"
+                type="password"
+                class="auth-input"
+                autocomplete="new-password"
+                data-i18n-placeholder="resetNewPasswordPlaceholder"
+                placeholder="New password"
+                aria-describedby="resetPasswordRequirements resetStrengthLabel"
+              >
+              <button
+                type="button"
+                class="password-toggle"
+                data-target="resetNewPassword"
+                id="resetNewPasswordToggle"
+                aria-label="Toggle new password visibility"
+              >
+                Show
+              </button>
+            </div>
+
+            <div id="resetPasswordRequirements" class="password-help" aria-live="polite"></div>
+
+            <div class="strength-meter" aria-hidden="true">
+              <div class="strength-bar" id="resetStrengthBar" style="width:0%"></div>
+            </div>
+
+            <div id="resetStrengthLabel" class="password-help" aria-live="polite"></div>
+
+            <div class="password-help" data-i18n="password.help">
+              Minimum 8 characters, with numbers and symbols.
+            </div>
+          </div>
+
+          <div class="field-group password-group">
+            <label for="resetConfirmPassword" data-i18n="reset.confirmLabel">Confirm password</label>
+            <div class="password-wrapper">
+              <input
+                id="resetConfirmPassword"
+                type="password"
+                class="auth-input"
+                autocomplete="new-password"
+                data-i18n-placeholder="resetConfirmPasswordPlaceholder"
+                placeholder="Confirm password"
+              >
+              <button
+                type="button"
+                class="password-toggle"
+                data-target="resetConfirmPassword"
+                id="resetConfirmPasswordToggle"
+                aria-label="Toggle confirm password visibility"
+              >
+                Show
+              </button>
+            </div>
+          </div>
+
+          <div class="form-messages" id="resetPasswordMessages" aria-live="polite"></div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="secondary-button" id="resetBackBtn" style="display:none;">
+          Back
+        </button>
+        <button type="button" class="primary-button" id="resetPrimaryBtn">
+          Continue
         </button>
       </div>
     </div>
