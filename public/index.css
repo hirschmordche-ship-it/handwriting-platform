@@ -1040,3 +1040,36 @@ body.rtl #resetResendRow {
   font-size: 0.78rem;
   color: var(--danger);
 }
+
+/* =========================================
+   FIX: Hide reset modal UI until opened
+========================================= */
+
+/* Hide ALL reset modal content when backdrop is hidden */
+#resetBackdrop[hidden] .modal,
+#resetBackdrop[hidden] .modal-header,
+#resetBackdrop[hidden] .modal-body,
+#resetBackdrop[hidden] .modal-footer,
+#resetBackdrop[hidden] #resetStepEmail,
+#resetBackdrop[hidden] #resetStepCode,
+#resetBackdrop[hidden] #resetStepPassword,
+#resetBackdrop[hidden] #resetBackBtn,
+#resetBackdrop[hidden] #resetPrimaryBtn {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* When modal is visible, show everything normally */
+#resetBackdrop:not([hidden]) .modal,
+#resetBackdrop:not([hidden]) .modal-header,
+#resetBackdrop:not([hidden]) .modal-body,
+#resetBackdrop:not([hidden]) .modal-footer,
+#resetBackdrop:not([hidden]) #resetBackBtn,
+#resetBackdrop:not([hidden]) #resetPrimaryBtn {
+  display: block;
+  visibility: visible;
+  opacity: 1;
+  pointer-events: auto;
+}
