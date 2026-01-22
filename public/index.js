@@ -800,7 +800,23 @@ loginForm.addEventListener("submit", async (e) => {
       localStorage.removeItem("rememberedEmail");
     }
 
-    window.location.href = "dashboard.html";
+    // Get logged-in user
+const { data: { user } } = await supabase.auth.getUser();
+
+// Fetch profile from your users table
+const { data: profile } = await supabase
+  .from("users")
+  .select("role")
+  .eq("id", user.id)
+  .single();
+
+// Redirect based on role
+if (profile.role === "admin") {
+  window.location.href = "admin.html";
+} else {
+  window.location.href = "dashboard.html";
+}
+
   } catch {
     loginMessages.textContent = dict.loginError;
   }
