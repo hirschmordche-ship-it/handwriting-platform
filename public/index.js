@@ -986,7 +986,7 @@ async function handleResetCode() {
   resetPrimaryBtn.disabled = true;
 
   try {
-    const res = await fetch("/api/auth/verify-reset-code", {
+    const res = await fetch("/api/auth/verify-reset.js", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email: resetEmail, code })
@@ -999,7 +999,9 @@ async function handleResetCode() {
       resetCodeMessages.textContent = dict.resetCodeError;
       return;
     }
-
+    
+  resetCode = code;
+    
     goToResetStep("password");
   } catch {
     resetCodeMessages.textContent = dict.resetCodeError;
@@ -1031,11 +1033,15 @@ async function handleResetPassword() {
   resetPrimaryBtn.disabled = true;
 
   try {
-    const res = await fetch("/api/auth/finish-reset", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: resetEmail, password: pass })
-    });
+  const res = await fetch("/api/auth/reset-password", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      email: resetEmail,
+      code: resetCode,     // ⭐ send stored code
+      newPassword: pass    // ⭐ backend expects newPassword
+    })
+  });
 
     if (!res.ok) throw new Error();
 
