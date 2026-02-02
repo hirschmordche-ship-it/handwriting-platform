@@ -109,6 +109,10 @@ We may update or modify the service at any time.</p>
 If you have questions, issues, or need assistance, you can reach us through our <a href="contactus.html">contact page</a>.</p>
 `
   },
+
+  // =========================
+  // HEBREW DICTIONARY
+  // =========================
   he: {
     "register.title": "יצירת חשבון",
     "register.emailLabel": "אימייל",
@@ -198,7 +202,7 @@ If you have questions, issues, or need assistance, you can reach us through our 
 אנו רשאים לעדכן, לשנות או להפסיק את השירות בכל עת.</p>
 
 <p><strong>5. יצירת קשר ותמיכה</strong><br>
-לשאלות, בעיות או צורך בעזרה — ניתן לפנות אלינו דרך <a href="contactus.html">דף יצירת הקשר</a>.</p>
+לשאלות, בעיות או צורך בעזרה — ניתן לפנות אלינו דרך <a href=\"contactus.html\">דף יצירת הקשר</a>.</p>
 `
   }
 };
@@ -307,7 +311,9 @@ if (modalBackdrop) {
   });
 }
 
-// Terms modal
+// =========================
+// TERMS MODAL
+// =========================
 function openTermsModal() {
   const dict = i18n[currentLang];
   if (!termsBackdrop) return;
@@ -392,48 +398,36 @@ function setLanguage(lang) {
   currentLang = lang === "he" ? "he" : "en";
   const dict = i18n[currentLang];
 
-  // Body direction (header stays visually stable)
   body.classList.remove("ltr", "rtl");
   body.classList.add(currentLang === "he" ? "rtl" : "ltr");
-  document.documentElement.lang = currentLang === "he" ? "he" : "en";
+  document.documentElement.lang = currentLang;
 
   if (langToggle) {
     langToggle.classList.toggle("lang-he", currentLang === "he");
     langToggle.classList.toggle("lang-en", currentLang !== "he");
   }
 
-  // Text content
   document.querySelectorAll("[data-i18n]").forEach((el) => {
     const key = el.getAttribute("data-i18n");
-    if (key && dict[key]) {
-      el.textContent = dict[key];
-    }
+    if (key && dict[key]) el.textContent = dict[key];
   });
 
-  // Placeholders
   document.querySelectorAll("[data-i18n-placeholder]").forEach((el) => {
     const key = el.getAttribute("data-i18n-placeholder");
-    if (key && dict[key]) {
-      el.placeholder = dict[key];
-    }
+    if (key && dict[key]) el.placeholder = dict[key];
   });
 
-  // Password toggle labels
   document.querySelectorAll(".password-toggle").forEach((btn) => {
     const targetId = btn.getAttribute("data-target");
-    if (!targetId) return;
     const input = document.getElementById(targetId);
     if (!input) return;
-    const isText = input.type === "text";
-    btn.textContent = isText ? dict.hide : dict.show;
+    btn.textContent = input.type === "text" ? dict.hide : dict.show;
   });
 
-  // Terms text if open
   if (termsBackdrop && !termsBackdrop.hidden) {
     termsText.innerHTML = dict["terms.full"];
   }
 
-  // Footer text
   if (footerText) {
     footerText.innerHTML = dict["footer.text"];
   }
@@ -451,23 +445,8 @@ if (langToggle) {
 // =========================
 // PASSWORD TOGGLES
 // =========================
-function setupPasswordToggle(buttonId, inputId) {
-  const button = document.getElementById(buttonId);
-  const input = document.getElementById(inputId);
-  if (!button || !input) return;
-
-  button.addEventListener("click", () => {
-    const dict = i18n[currentLang];
-    const isHidden = input.type === "password";
-    input.type = isHidden ? "text" : "password";
-    button.textContent = isHidden ? dict.hide : dict.show;
-  });
-}
-
-// Global data-target based toggles (for reset fields etc.)
 document.querySelectorAll(".password-toggle").forEach((btn) => {
   const targetId = btn.getAttribute("data-target");
-  if (!targetId) return;
   const input = document.getElementById(targetId);
   if (!input) return;
 
@@ -567,6 +546,7 @@ function updateRegisterStrengthUI(password) {
       (currentLang === "he" ? "חסר: " : "Missing: ") + missingText;
   }
 }
+
 // =========================
 // REGISTER BUTTON STATE
 // =========================
@@ -580,11 +560,8 @@ function updateRegisterButtonState() {
 
   const btn = document.getElementById("registerButton");
   if (!btn) return;
-  if (valid) {
-    btn.classList.add("enabled");
-  } else {
-    btn.classList.remove("enabled");
-  }
+  if (valid) btn.classList.add("enabled");
+  else btn.classList.remove("enabled");
 }
 
 if (regPassword) {
@@ -635,7 +612,8 @@ registerForm.addEventListener("submit", async (e) => {
   try {
     btn.disabled = true;
 
-    const res = await fetch("/api/auth/start-register", {
+    // ⭐ UPDATED ROUTE
+    const res = await fetch("/api/auth/register?action=start", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password, lang: currentLang })
@@ -737,7 +715,8 @@ verifySubmit.addEventListener("click", async () => {
   verifySubmit.disabled = true;
 
   try {
-    const res = await fetch("/api/auth/verify-register", {
+    // ⭐ UPDATED ROUTE
+    const res = await fetch("/api/auth/register?action=verify", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email: pendingRegisterEmail, code })
@@ -801,21 +780,21 @@ loginForm.addEventListener("submit", async (e) => {
     }
 
     // Get logged-in user
-const { data: { user } } = await supabase.auth.getUser();
+    const { data: { user } } = await supabase.auth.getUser();
 
-// Fetch profile from your users table
-const { data: profile } = await supabase
-  .from("users")
-  .select("role")
-  .eq("id", user.id)
-  .single();
+    // Fetch profile from your users table
+    const { data: profile } = await supabase
+      .from("users")
+      .select("role")
+      .eq("id", user.id)
+      .single();
 
-// Redirect based on role
-if (profile.role === "admin") {
-  window.location.href = "admin.html";
-} else {
-  window.location.href = "dashboard.html";
-}
+    // Redirect based on role
+    if (profile.role === "admin") {
+      window.location.href = "admin.html";
+    } else {
+      window.location.href = "dashboard.html";
+    }
 
   } catch {
     loginMessages.textContent = dict.loginError;
@@ -835,6 +814,7 @@ async function tryAutoPasteVerifyCode() {
 }
 
 window.addEventListener("focus", tryAutoPasteVerifyCode);
+
 // =========================
 // RESET MODAL OPEN/CLOSE
 // =========================
@@ -879,7 +859,7 @@ resetClose.addEventListener("click", closeResetModal);
 // DO NOT CLOSE ON BACKDROP CLICK
 // =========================
 resetBackdrop.addEventListener("click", (e) => {
-  // Intentionally empty — backdrop click does nothing
+  // intentionally empty
 });
 
 // =========================
@@ -955,7 +935,7 @@ resetPrimaryBtn.addEventListener("click", async () => {
 });
 
 // =========================
-// STEP 1 — SEND RESET EMAIL
+// STEP 1 – SEND RESET EMAIL
 // =========================
 async function handleResetEmail() {
   const dict = i18n[currentLang];
@@ -969,7 +949,8 @@ async function handleResetEmail() {
   resetPrimaryBtn.disabled = true;
 
   try {
-    const res = await fetch("/api/auth/start-reset", {
+    // ⭐ UPDATED ROUTE
+    const res = await fetch("/api/auth/reset?action=start", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, lang: currentLang })
@@ -988,7 +969,7 @@ async function handleResetEmail() {
 }
 
 // =========================
-// STEP 2 — VERIFY RESET CODE
+// STEP 2 – VERIFY RESET CODE
 // =========================
 async function handleResetCode() {
   const dict = i18n[currentLang];
@@ -1002,7 +983,8 @@ async function handleResetCode() {
   resetPrimaryBtn.disabled = true;
 
   try {
-    const res = await fetch("/api/auth/verify-reset.js", {
+    // ⭐ UPDATED ROUTE
+    const res = await fetch("/api/auth/reset?action=verify", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email: resetEmail, code })
@@ -1015,9 +997,8 @@ async function handleResetCode() {
       resetCodeMessages.textContent = dict.resetCodeError;
       return;
     }
-    
-  resetCode = code;
-    
+
+    resetCode = code;
     goToResetStep("password");
   } catch {
     resetCodeMessages.textContent = dict.resetCodeError;
@@ -1027,7 +1008,7 @@ async function handleResetCode() {
 }
 
 // =========================
-// STEP 3 — SET NEW PASSWORD
+// STEP 3 – SET NEW PASSWORD
 // =========================
 async function handleResetPassword() {
   const dict = i18n[currentLang];
@@ -1049,15 +1030,15 @@ async function handleResetPassword() {
   resetPrimaryBtn.disabled = true;
 
   try {
-  const res = await fetch("/api/auth/reset-password", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      email: resetEmail,
-      code: resetCode,     // ⭐ send stored code
-      newPassword: pass    // ⭐ backend expects newPassword
-    })
-  });
+    // ⭐ UPDATED ROUTE
+    const res = await fetch("/api/auth/reset?action=finish", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: resetEmail,
+        newPassword: pass
+      })
+    });
 
     if (!res.ok) throw new Error();
 
@@ -1121,7 +1102,8 @@ resetResendBtn.addEventListener("click", async () => {
   resetResendBtn.disabled = true;
 
   try {
-    const res = await fetch("/api/auth/start-reset", {
+    // ⭐ UPDATED ROUTE
+    const res = await fetch("/api/auth/reset?action=start", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email: resetEmail, lang: currentLang })
