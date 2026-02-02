@@ -1,13 +1,8 @@
-export default async function handler(req, res) {
-  if (req.method !== "POST") return res.status(405).end();
-
-  try {
-    const { email, lang } = req.body;
-    if (!email || !lang) return res.status(400).json({ success: false });
-
 import { createClient } from "@supabase/supabase-js";
 
 export default async function handler(req, res) {
+  if (req.method !== "POST") return res.status(405).end();
+
   const supabase = createClient(
     process.env.SUPABASE_URL,
     process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -19,7 +14,8 @@ export default async function handler(req, res) {
   // START RESET
   // ---------------------------
   if (action === "start") {
-    const { email } = req.body;
+    const { email, lang } = req.body;
+    if (!email || !lang) return res.status(400).json({ success: false });
 
     const { error } = await supabase
       .from("pending_resets")
