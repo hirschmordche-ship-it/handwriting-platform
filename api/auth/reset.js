@@ -5,7 +5,6 @@ export default async function handler(req, res) {
     const { email, lang } = req.body;
     if (!email || !lang) return res.status(400).json({ success: false });
 
-    // continue with your logic...
 import { createClient } from "@supabase/supabase-js";
 
 export default async function handler(req, res) {
