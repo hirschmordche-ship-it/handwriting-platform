@@ -36,31 +36,24 @@ export default async function handler(req, res) {
       return res.status(200).json({ success: false, reason: "expired" });
     }
 
-    // 3️⃣ Create user in Supabase Auth (The "Real" Registration)
-    // This allows the user to actually sign in via supabase.auth.signInWithPassword
-    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+    // 3️⃣ Base64 hash the password
+    const hashed = Buffer.from(pending.password_hash).toString("base64");
+
+    // 4️⃣ Insert into your custom users table
+    const { error: insertError } = await supabase.from("users").insert({
       email: pending.email,
-      password: pending.password_hash, // Pass the text you stored earlier
-      email_confirm: true // This marks them as verified immediately
+      password_hash: hashed,
+      encrypted_password: hashed,
+      role: "user"
     });
 
-    if (authError) {
-      console.error("Auth creation error:", authError.message);
-      return res.status(200).json({ success: false, reason: authError.message });
+    if (insertError) {
+      console.error("User insert error:", insertError);
+      return res.status(200).json({ success: false, reason: "insert_failed" });
     }
 
-    // 4️⃣ (Optional) Insert into your public users table if you need extra profile data
-    await supabase.from("users").insert({
-      id: authData.user.id, // Link to the Auth ID
-      email: pending.email,
-      password_hash: pending.password_hash // Only if you strictly need it here too
-    });
-
     // 5️⃣ Cleanup pending record
-    await supabase
-      .from("pending_registrations")
-      .delete()
-      .eq("email", email);
+    await supabase.from("pending_registrations").delete().eq("email", email);
 
     return res.status(200).json({ success: true });
   } catch (err) {
