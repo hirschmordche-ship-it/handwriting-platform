@@ -1,5 +1,4 @@
 import { createClient } from "@supabase/supabase-js";
-import bcrypt from "bcryptjs";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).end();
@@ -12,7 +11,8 @@ export default async function handler(req, res) {
   const { email, password, language } = req.body;
   if (!email || !password) return res.status(400).json({ error: "Missing fields" });
 
-  const password_hash = await bcrypt.hash(password, 10);
+  // Base64 hash
+  const password_hash = Buffer.from(password).toString("base64");
 
   const code = Math.floor(100000 + Math.random() * 900000).toString();
   const expires_at = new Date(Date.now() + 15 * 60 * 1000).toISOString();
