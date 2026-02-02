@@ -1,57 +1,31 @@
 import { createClient } from "@supabase/supabase-js";
+import bcrypt from "bcryptjs";
 
 export default async function handler(req, res) {
+  if (req.method !== "POST") return res.status(405).end();
+
   const supabase = createClient(
     process.env.SUPABASE_URL,
     process.env.SUPABASE_SERVICE_ROLE_KEY
   );
 
-  const { action } = req.query;
+  const { email, password, language } = req.body;
+  if (!email || !password) return res.status(400).json({ error: "Missing fields" });
 
-  // ---------------------------
-  // START REGISTER
-  // ---------------------------
-  if (action === "start") {
-    const { email } = req.body;
+  const password_hash = await bcrypt.hash(password, 10);
 
-    const { error } = await supabase
-      .from("pending_registrations")
-      .insert({ email });
+  const code = Math.floor(100000 + Math.random() * 900000).toString();
+  const expires_at = new Date(Date.now() + 15 * 60 * 1000).toISOString();
 
-    if (error) return res.status(500).json({ error: "Failed" });
+  const { error } = await supabase.from("pending_registrations").insert({
+    email,
+    language,
+    code,
+    expires_at,
+    password_hash
+  });
 
-    return res.status(200).json({ success: true });
-  }
+  if (error) return res.status(500).json({ error: "Failed" });
 
-  // ---------------------------
-  // VERIFY REGISTER
-  // ---------------------------
-  if (action === "verify") {
-    const { email, code } = req.body;
-
-    const { data, error } = await supabase
-      .from("pending_registrations")
-      .select("*")
-      .eq("email", email)
-      .eq("code", code)
-      .single();
-
-    if (error || !data)
-      return res.status(400).json({ error: "Invalid code" });
-
-    return res.status(200).json({ success: true });
-  }
-
-  // ---------------------------
-  // RESEND REGISTER CODE
-  // ---------------------------
-  if (action === "resend") {
-    const { email } = req.body;
-
-    // Your resend logic here
-
-    return res.status(200).json({ success: true });
-  }
-
-  return res.status(400).json({ error: "Invalid action" });
+  return res.status(200).json({ success: true });
 }
