@@ -1,63 +1,43 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" dir="ltr">
 <head>
   <meta charset="UTF-8" />
   <title>Admin Dashboard</title>
   <link rel="stylesheet" href="index.css" />
 </head>
 <body class="theme-light">
-  <header class="admin-header">
-    <div class="admin-tabs">
-      <button class="admin-tab active" data-lang="en">English Glyphs</button>
-      <button class="admin-tab" data-lang="he">Hebrew Glyphs</button>
+
+<header class="admin-header">
+  <div class="admin-tabs">
+    <button class="admin-tab active" data-lang="en">English</button>
+    <button class="admin-tab" data-lang="he">Hebrew</button>
+  </div>
+</header>
+
+<main class="admin-main">
+  <section class="user-list-panel">
+    <input id="userSearch" placeholder="Search users…" />
+    <ul id="userList"></ul>
+  </section>
+
+  <section class="user-details-panel">
+    <div id="userSummary">Select a user</div>
+
+    <div id="userDetails" class="hidden">
+      <h2 id="userEmail"></h2>
+      <p id="userStatus"></p>
+
+      <div class="controls">
+        <button class="view-toggle active" data-view="letters">By letter</button>
+        <button class="view-toggle" data-view="all">All glyphs</button>
+      </div>
+
+      <div id="glyphsByLetter"></div>
+      <div id="glyphsAll" class="hidden"></div>
     </div>
+  </section>
+</main>
 
-    <div class="admin-header-right">
-      <!-- Hook this into your existing theme toggle logic -->
-      <button id="themeToggle">Toggle Theme</button>
-    </div>
-  </header>
-
-  <main class="admin-main">
-    <section class="user-list-panel">
-      <div class="user-list-header">
-        <input
-          type="text"
-          id="userSearch"
-          placeholder="Search users..."
-        />
-      </div>
-      <ul id="userList" class="user-list"></ul>
-    </section>
-
-    <section class="user-details-panel">
-      <div id="userSummary" class="user-summary empty-state">
-        Select a user to view details.
-      </div>
-
-      <div class="user-details-sections hidden" id="userDetailsSections">
-        <div class="user-details-top">
-          <h2 id="userEmail"></h2>
-          <p id="userRole"></p>
-          <p id="userStatus"></p>
-        </div>
-
-        <div class="user-glyphs-controls">
-          <button class="glyph-view-toggle active" data-mode="letters">
-            Show by letter
-          </button>
-          <button class="glyph-view-toggle" data-mode="all">
-            Show all glyphs
-          </button>
-        </div>
-
-        <div id="glyphsByLetter" class="glyphs-by-letter"></div>
-        <div id="glyphsAll" class="glyphs-all hidden"></div>
-      </div>
-    </section>
-  </main>
-
-  <script src="/api/auth/supabase-client-placeholder.js"></script>
-  <script src="index.js" type="module"></script>
+<script src="index.js"></script>
 </body>
 </html>
