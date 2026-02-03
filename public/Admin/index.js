@@ -1,99 +1,149 @@
-// public/Admin/admin.js
+let currentLang = "en";
+let currentView = "letters";
+let allGlyphs = [];
+let visibleGlyphs = [];
+let selected = new Set();
+let undoStack = [];
 
-let users = [];
-let filteredUsers = [];
-let selectedUserId = null;
-let currentLang = "en"; // "en" or "he"
-let currentTab = "users"; // "users" | "glyphs"
+const byLetterEl = document.getElementById("glyphsByLetter");
+const allEl = document.getElementById("glyphsAll");
 
-const userListEl = document.getElementById("user-list");
-const userEmailEl = document.getElementById("user-email");
-const userRoleEl = document.getElementById("user-role");
-const userStatusEl = document.getElementById("user-status");
-const glyphsContainerEl = document.getElementById("glyphs-container");
-const tabUsersEl = document.getElementById("tab-users");
-const tabGlyphsEl = document.getElementById("tab-glyphs");
-const langToggleEnEl = document.getElementById("lang-toggle-en");
-const langToggleHeEl = document.getElementById("lang-toggle-he");
-const searchInputEl = document.getElementById("user-search");
-
-// ---------- INIT ----------
-
-document.addEventListener("DOMContentLoaded", () => {
-  setupTabHandlers();
-  setupLangToggle();
-  setupSearch();
-  loadUsers();
+/* ---------- LANGUAGE ---------- */
+document.querySelectorAll(".admin-tab").forEach(btn => {
+  btn.onclick = () => {
+    document.querySelectorAll(".admin-tab").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    currentLang = btn.dataset.lang;
+    loadGlyphs();
+  };
 });
 
-// ---------- TABS ----------
+/* ---------- VIEW ---------- */
+document.querySelectorAll(".view-toggle").forEach(btn => {
+  btn.onclick = () => {
+    document.querySelectorAll(".view-toggle").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    currentView = btn.dataset.view;
+    render();
+  };
+});
 
-function setupTabHandlers() {
-  tabUsersEl.addEventListener("click", () => {
-    currentTab = "users";
-    tabUsersEl.classList.add("active");
-    tabGlyphsEl.classList.remove("active");
-    document.getElementById("users-panel").style.display = "block";
-    document.getElementById("glyphs-panel").style.display = "none";
-  });
-
-  tabGlyphsEl.addEventListener("click", () => {
-    currentTab = "glyphs";
-    tabGlyphsEl.classList.add("active");
-    tabUsersEl.classList.remove("active");
-    document.getElementById("users-panel").style.display = "none";
-    document.getElementById("glyphs-panel").style.display = "block";
-    if (selectedUserId) {
-      loadUserDetails(selectedUserId);
-    }
-  });
+/* ---------- LOAD ---------- */
+async function loadGlyphs() {
+  const res = await fetch(`/api/admin/admin?action=get-glyphs&userId=demo&language=${currentLang}`);
+  const data = await res.json();
+  allGlyphs = data.glyphs || [];
+  visibleGlyphs = allGlyphs;
+  selected.clear();
+  render();
 }
 
-// ---------- LANGUAGE TOGGLE ----------
+/* ---------- RENDER ---------- */
+function render() {
+  byLetterEl.innerHTML = "";
+  allEl.innerHTML = "";
 
-function setupLangToggle() {
-  langToggleEnEl.addEventListener("click", () => {
-    currentLang = "en";
-    langToggleEnEl.classList.add("active");
-    langToggleHeEl.classList.remove("active");
-    if (selectedUserId) loadUserDetails(selectedUserId);
-  });
-
-  langToggleHeEl.addEventListener("click", () => {
-    currentLang = "he";
-    langToggleHeEl.classList.add("active");
-    langToggleEnEl.classList.remove("active");
-    if (selectedUserId) loadUserDetails(selectedUserId);
-  });
+  if (currentView === "letters") renderLetters();
+  else renderAll();
 }
 
-// ---------- SEARCH ----------
-
-function setupSearch() {
-  searchInputEl.addEventListener("input", () => {
-    const q = searchInputEl.value.toLowerCase();
-    filteredUsers = users.filter((u) =>
-      (u.email || "").toLowerCase().includes(q)
-    );
-    renderUserList();
+function renderLetters() {
+  const map = {};
+  allGlyphs.forEach(g => {
+    map[g.letter] = map[g.letter] || [];
+    map[g.letter].push(g);
   });
+
+  const grid = document.createElement("div");
+  grid.className = "glyph-grid";
+
+  Object.entries(map).forEach(([letter, list]) => {
+    const card = document.createElement("div");
+    card.className = "glyph-card";
+    card.innerHTML = `<div class="${currentLang==='he'?'rtl':''}">${letter}</div><small>${list.length}</small>`;
+    card.onclick = () => {
+      visibleGlyphs = list;
+      currentView = "all";
+      document.querySelector('[data-view="all"]').click();
+    };
+    grid.appendChild(card);
+  });
+
+  byLetterEl.appendChild(grid);
+  byLetterEl.classList.remove("hidden");
+  allEl.classList.add("hidden");
 }
 
-// ---------- LOAD USERS ----------
+function renderAll() {
+  visibleGlyphs.forEach(g => {
+    const row = document.createElement("div");
+    row.className = "glyph-row";
+    if (selected.has(g.id)) row.classList.add("selected");
 
-async function loadUsers() {
-  try {
-    const res = await fetch("/api/admin/get-users");
-    const data = await res.json();
-    if (!data.success) {
-      userListEl.innerHTML = `<li class="user-list-item">Failed to load users</li>`;
-      return;
-    }
+    row.onclick = e => {
+      if (e.ctrlKey || e.metaKey) toggleSelect(g.id, row);
+    };
 
-    users = data.users || [];
-    filteredUsers = [...users];
+    const c = document.createElement("canvas");
+    c.width = 42; c.height = 42;
+    c.className = "preview";
+    draw(c);
+    c.onclick = e => { e.stopPropagation(); zoom(c); };
 
-    renderUserList();
+    const l = document.createElement("div");
+    l.className = currentLang==="he"?"rtl":"";
+    l.textContent = g.letter;
+
+    row.append(c,l);
+    allEl.appendChild(row);
+  });
+
+  allEl.classList.remove("hidden");
+  byLetterEl.classList.add("hidden");
+}
+
+/* ---------- SELECT ---------- */
+function toggleSelect(id,row){
+  selected.has(id) ? selected.delete(id) : selected.add(id);
+  row.classList.toggle("selected");
+}
+
+/* ---------- DELETE + UNDO ---------- */
+document.addEventListener("keydown", e => {
+  if (e.key === "Delete" && selected.size) bulkDelete();
+});
+
+async function bulkDelete(){
+  if(!confirm(`Delete ${selected.size} glyphs?`)) return;
+  undoStack.push([...selected]);
+  for(const id of selected){
+    await fetch("/api/admin/admin?action=delete-glyph",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({glyphId:id})
+    });
+  }
+  selected.clear();
+  loadGlyphs();
+}
+
+/* ---------- ZOOM ---------- */
+function zoom(src){
+  const m=document.createElement("div");
+  m.className="modal";
+  const b=document.createElement("canvas");
+  b.width=300;b.height=300;
+  b.getContext("2d").drawImage(src,0,0,300,300);
+  m.appendChild(b);
+  m.onclick=()=>m.remove();
+  document.body.appendChild(m);
+}
+
+/* ---------- PREVIEW ---------- */
+function draw(c){
+  const x=c.getContext("2d");
+  x.strokeRect(6,6,30,30);
+}
 
     if (users.length > 0) {
       selectedUserId = users[0].id;
