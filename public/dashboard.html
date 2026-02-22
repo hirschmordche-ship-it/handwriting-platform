@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Glyph Dashboard</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+
+  <link rel="icon" href="images/circle.png">
+  <link rel="apple-touch-icon" href="images/circle.png">
+  <link rel="shortcut icon" href="images/circle.png">
+
+  <link rel="stylesheet" href="dashboard.css">
+</head>
+<body class="dashboard light ltr">
+  <div class="hero">
+    <img src="images/Full-header.jpg" alt="Header" class="hero-img">
+  </div>
+
+  <header class="topbar" id="topbar">
+    <div class="topbar-inner">
+      <div class="topbar-left">
+        <button id="hamburger" class="hamburger" aria-label="Open menu" aria-expanded="false">
+          <span></span><span></span><span></span>
+        </button>
+        <div class="brand">
+          <img src="images/circle.png" alt="logo" class="logo">
+          <div class="brand-text">
+            <strong data-i18n="brand.title">Glyph Intelligence</strong>
+            <small data-i18n="brand.subtitle">Adaptive OCR & glyph learning</small>
+          </div>
+        </div>
+      </div>
+
+      <div class="topbar-right">
+        <div id="langPill" class="lang-toggle-pill lang-en" role="button" tabindex="0">
+          <div class="lang-toggle-thumb"></div>
+          <span data-lang="en">EN</span>
+          <span data-lang="he">עבר</span>
+        </div>
+
+        <button id="themeToggle" class="theme-toggle" aria-label="Toggle theme">
+          <div class="theme-track">
+            <div class="theme-knob">
+              <span class="icon sun">☀️</span>
+              <span class="icon moon">🌙</span>
+            </div>
+          </div>
+        </button>
+      </div>
+    </div>
+
+    <nav id="drawer" class="drawer" aria-hidden="true">
+      <ul>
+        <li>
+          <a class="nav-link" href="upload.html">
+            <span>⬆️</span><span data-i18n="menu.upload">Upload glyphs</span>
+          </a>
+        </li>
+        <li>
+          <a class="nav-link" href="contactus.html">
+            <span>💬</span><span data-i18n="menu.support">Contact support</span>
+          </a>
+        </li>
+        <li>
+          <a class="nav-link" href="profile.html">
+            <span>👤</span><span data-i18n="menu.profile">Profile</span>
+          </a>
+        </li>
+        <li>
+          <a class="nav-link" href="settings.html">
+            <span>⚙️</span><span data-i18n="menu.settings">Settings</span>
+          </a>
+        </li>
+        <li>
+          <a class="nav-link" href="activity.html">
+            <span>📊</span><span data-i18n="menu.activity">Activity</span>
+          </a>
+        </li>
+      </ul>
+    </nav>
+  </header>
+
+  <main class="main">
+    <section class="layout">
+      <div class="column-left">
+        <div class="card upload-card">
+          <div class="card-head">
+            <div>
+              <h2 data-i18n="section.uploadTitle">Upload & translate</h2>
+              <p class="sub" data-i18n="section.uploadSub">
+                Tap or drop anywhere in the box. OCR uses your glyphs, learns from corrections, and respects RTL/LTR.
+              </p>
+            </div>
+          </div>
+
+          <div class="upload-area">
+            <div id="dropZone" class="upload-drop" tabindex="0">
+              <div class="upload-icon">📷</div>
+              <div class="upload-title" data-i18n="upload.dropTitle">Tap anywhere or drop files here</div>
+              <div class="upload-sub" data-i18n="upload.dropSub">
+                Images or PDFs, multi‑page supported. Camera capture works on mobile.
+              </div>
+              <input id="fileInput" type="file" accept="image/*,application/pdf" multiple hidden>
+            </div>
+
+            <div class="progress-block">
+              <div class="progress-header">
+                <span class="label" data-i18n="upload.progressLabel">OCR progress</span>
+                <span id="progressStatus" class="status" data-i18n="upload.progressIdle">Waiting for upload…</span>
+              </div>
+              <div class="progress-bar">
+                <div id="progressFill" class="progress-fill"></div>
+              </div>
+              <div id="aiExplain" class="ai-explain"></div>
+            </div>
+
+            <div class="upload-thumbs" id="uploadThumbs"></div>
+          </div>
+        </div>
+
+        <div class="card translate-card">
+          <div class="card-head">
+            <div>
+              <h2 data-i18n="translation.title">Translation</h2>
+              <p id="translateMeta" class="sub">
+                Language: English. OCR accuracy over time will update as you edit.
+              </p>
+            </div>
+          </div>
+
+          <div class="translate-body">
+            <div class="translate-toolbar">
+              <button id="toggleGlyphHighlight" class="pill" data-i18n="translation.highlightGlyphs">
+                Highlight glyph resolve
+              </button>
+
+              <div class="export">
+                <select id="exportSelect" class="select">
+                  <option value="text" data-i18n="translation.exportText">Plain text</option>
+                  <option value="pdf" data-i18n="translation.exportPdf">PDF</option>
+                  <option value="image" data-i18n="translation.exportImage">Image</option>
+                  <option value="copy" data-i18n="translation.exportCopy">Copy to clipboard</option>
+                </select>
+                <button id="btnExport" class="primary" data-i18n="translation.exportBtn">Export</button>
+              </div>
+            </div>
+
+            <textarea id="translation" class="translation" spellcheck="false"
+              placeholder="OCR output appears here"></textarea>
+
+            <div class="translate-footer">
+              <span class="hint" data-i18n="translation.hint">
+                Edits teach the system: character substitutions, word corrections, and contextual fixes.
+              </span>
+              <div class="accuracy">
+                <label id="accuracyLabel">OCR accuracy</label>
+                <div class="accuracy-bar">
+                  <div id="accuracyFill"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card jobs-card">
+          <div class="card-head">
+            <div>
+              <h3 data-i18n="jobs.title">Recent OCR jobs</h3>
+              <p class="sub" data-i18n="jobs.subtitle">Reopen jobs to inspect results.</p>
+            </div>
+          </div>
+          <div id="jobsList" class="jobs-list"></div>
+        </div>
+      </div>
+
+      <div class="column-right">
+        <div class="card glyphs-card">
+          <div class="card-head glyphs-head">
+            <div>
+              <h3 data-i18n="glyphs.title">Glyph library</h3>
+              <p id="glyphCounts" class="sub"></p>
+            </div>
+            <div class="glyph-controls">
+              <input id="glyphSearch" class="search" type="search" placeholder="Search glyphs…">
+              <button id="viewModeToggle" class="pill small-pill">Grouped</button>
+              <button id="glyphStatsBtn" class="pill small-pill">Total glyphs</button>
+            </div>
+          </div>
+
+          <div class="suggestions">
+            <div class="suggestions-header" id="suggestHeader">
+              <div class="suggest-header-main">
+                <strong data-i18n="glyphs.suggestionsTitle">Suggestions & improvements</strong>
+                <div class="sub" data-i18n="glyphs.suggestionsSub">Help the system understand you better.</div>
+              </div>
+              <div class="suggest-header-right">
+                <span id="suggestBadge" class="badge">⚠️</span>
+                <button id="suggestToggle" class="suggest-toggle" aria-label="Toggle suggestions">
+                  <span class="suggest-toggle-arrow">▼</span>
+                </button>
+              </div>
+            </div>
+            <div id="suggestionsList" class="suggestions-list collapsed"></div>
+          </div>
+
+          <div id="glyphGroups" class="glyph-groups"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div id="modalOverlay" class="modal-overlay hidden" aria-hidden="true">
+    <div class="modal-dialog">
+      <header class="modal-head">
+        <h4 id="modalTitle">Modal</h4>
+        <button id="modalClose" class="icon-btn" aria-label="Close">✕</button>
+      </header>
+      <div id="modalBody" class="modal-body"></div>
+    </div>
+  </div>
+
+  <div id="snackbar" class="snackbar"></div>
+
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  <script src="supabaseClient.js"></script>
+  <script src="dashboard.js" defer></script>
+</body>
+</html>
