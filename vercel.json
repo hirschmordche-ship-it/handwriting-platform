@@ -4,6 +4,14 @@
       "path": "/api/cron/cleanup-pending",
       "schedule": "0 3 1 */6 *"
     }
+  ],
+  "headers": [
+    {
+      "source": "/dashboard.js",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-store" },
+        { "key": "Content-Encoding", "value": "identity" }
+      ]
+    }
   ]
 }
-
