@@ -1030,21 +1030,29 @@ function setupUI(){
 
 // ---------- INIT ----------
 
-document.addEventListener('DOMContentLoaded', async ()=>{
+document.addEventListener('DOMContentLoaded', async () => {
   const savedTheme = localStorage.getItem('dashboardTheme');
-  if(savedTheme === 'dark' || savedTheme === 'light') State.theme = savedTheme;
+  if (savedTheme === 'dark' || savedTheme === 'light') State.theme = savedTheme;
   const savedLang = localStorage.getItem('dashboardLang');
-  if(savedLang === 'en' || savedLang === 'he') State.lang = savedLang;
+  if (savedLang === 'en' || savedLang === 'he') State.lang = savedLang;
 
   applyTheme();
   applyLang();
 
-  CURRENT_USER = await requireAuth();
-  if(!CURRENT_USER) return;
+  try {
+    CURRENT_USER = await requireAuth();
+  } catch (e) {
+    console.error('requireAuth failed', e);
+  }
 
-  await loadJobsFromDb();
-  await loadGlyphsFromDb();
-  await loadSuggestionsFromDb();
+  // TEMP: allow dashboard to run even if not logged in
+  if (!CURRENT_USER) {
+    console.warn('No CURRENT_USER, running dashboard in demo mode');
+  }
+
+  await loadJobsFromDb().catch(console.error);
+  await loadGlyphsFromDb().catch(console.error);
+  await loadSuggestionsFromDb().catch(console.error);
 
   setupUI();
 });
